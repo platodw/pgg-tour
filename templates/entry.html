@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PGG Tour - Enter the Clubhouse</title>
-  
+
   <!-- PWA Meta Tags -->
   <meta name="description" content="Professional golf scoring and tournament management for PGG Tour">
   <meta name="theme-color" content="#16a34a">
@@ -12,16 +12,16 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="PGG Tour">
   <meta name="mobile-web-app-capable" content="yes">
-  
+
   <!-- PWA Manifest -->
   <link rel="manifest" href="/static/manifest.json">
-  
+
   <!-- Icons -->
   <link rel="icon" type="image/x-icon" href="/static/favicon.ico" />
   <link rel="apple-touch-icon" href="/static/icons/icon-192x192.png">
-  
+
   <script src="https://cdn.tailwindcss.com"></script>
-  
+
   <style>
     body {
       font-family: 'Georgia', serif;
@@ -29,68 +29,9 @@
       min-height: 100vh;
       overflow: hidden;
     }
-    
-    /* Golf Animation Styles */
-    .golf-scene {
-      position: relative;
-      width: 300px;
-      height: 200px;
-      margin: 0 auto;
-    }
-    
-    .golf-club {
-      position: absolute;
-      bottom: 50px;
-      left: 50px;
-      width: 80px;
-      height: 120px;
-      transform-origin: bottom center;
-      animation: swing 2s ease-in-out;
-    }
-    
-    .golf-ball {
-      position: absolute;
-      bottom: 60px;
-      left: 120px;
-      width: 20px;
-      height: 20px;
-      background: white;
-      border-radius: 50%;
-      animation: ballFly 2s ease-out 1.8s forwards;
-      opacity: 0;
-    }
-    
-    .golf-tee {
-      position: absolute;
-      bottom: 50px;
-      left: 125px;
-      width: 10px;
-      height: 20px;
-      background: #8B4513;
-      border-radius: 2px;
-    }
-    
-    /* Animations */
-    @keyframes swing {
-      0% { transform: rotate(-45deg); }
-      50% { transform: rotate(15deg); }
-      100% { transform: rotate(-45deg); }
-    }
-    
-    @keyframes ballFly {
-      0% { 
-        opacity: 1;
-        transform: translate(0, 0) scale(1);
-      }
-      50% {
-        transform: translate(100px, -80px) scale(0.8);
-      }
-      100% { 
-        opacity: 0;
-        transform: translate(200px, -40px) scale(0.5);
-      }
-    }
-    
+
+    /* Logo Animation Styles */
+
     @keyframes fadeInUp {
       from {
         opacity: 0;
@@ -101,49 +42,49 @@
         transform: translateY(0);
       }
     }
-    
+
     @keyframes logoGlow {
       0%, 100% { box-shadow: 0 0 20px rgba(22, 163, 74, 0.5); }
       50% { box-shadow: 0 0 40px rgba(22, 163, 74, 0.8); }
     }
-    
+
     .fade-in-up {
       animation: fadeInUp 1s ease-out forwards;
       opacity: 0;
     }
-    
+
     .logo-glow {
       animation: logoGlow 2s ease-in-out infinite;
     }
-    
-    .delay-1 { animation-delay: 3s; }
-    .delay-2 { animation-delay: 4s; }
-    .delay-3 { animation-delay: 5s; }
-    
+
+    .delay-1 { animation-delay: 0.5s; }
+    .delay-2 { animation-delay: 1s; }
+    .delay-3 { animation-delay: 1.5s; }
+
     /* Password Form Styles */
     .password-form {
       backdrop-filter: blur(10px);
       background: rgba(255, 255, 255, 0.1);
       border: 1px solid rgba(255, 255, 255, 0.2);
     }
-    
+
     .password-input {
       background: rgba(255, 255, 255, 0.9);
       border: 2px solid transparent;
       transition: all 0.3s ease;
     }
-    
+
     .password-input:focus {
       background: white;
       border-color: #16a34a;
       box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.1);
     }
-    
+
     .enter-button {
       background: linear-gradient(45deg, #16a34a, #059669);
       transition: all 0.3s ease;
     }
-    
+
     .enter-button:hover {
       background: linear-gradient(45deg, #059669, #047857);
       transform: translateY(-2px);
@@ -154,40 +95,20 @@
 <body class="flex items-center justify-center min-h-screen">
 
   <div class="text-center text-white max-w-md mx-auto px-6">
-    
-    <!-- Golf Animation Scene -->
-    <div class="golf-scene mb-8">
-      <!-- Golf Tee -->
-      <div class="golf-tee"></div>
-      
-      <!-- Golf Club -->
-      <div class="golf-club">
-        <svg viewBox="0 0 80 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <!-- Club Handle -->
-          <rect x="38" y="0" width="4" height="100" fill="#8B4513"/>
-          <!-- Club Head -->
-          <rect x="30" y="95" width="20" height="8" rx="2" fill="#C0C0C0"/>
-        </svg>
-      </div>
-      
-      <!-- Golf Ball -->
-      <div class="golf-ball"></div>
-    </div>
-    
+
     <!-- PGG Tour Logo -->
-    <div class="fade-in-up delay-1 mb-6">
-      <img src="/static/logo.jpg" alt="PGG Tour Logo" 
-           class="w-24 h-24 mx-auto rounded-full logo-glow mb-4">
-      <h1 class="text-4xl font-bold text-white mb-2">PGG Tour</h1>
-      <p class="text-xl text-green-200">Professional Golf Group</p>
+    <div class="fade-in-up delay-1 mb-8">
+      <img src="/static/logo.jpg" alt="PGG Tour Logo"
+           class="w-32 h-32 mx-auto rounded-full logo-glow mb-6">
+      <h1 class="text-5xl font-bold text-white mb-4">PGG Tour</h1>
     </div>
-    
+
     <!-- Welcome Message -->
     <div class="fade-in-up delay-2 mb-8">
       <h2 class="text-2xl font-semibold mb-2">🏌️ Enter the Clubhouse</h2>
       <p class="text-green-100">Welcome to the exclusive PGG Tour experience</p>
     </div>
-    
+
     <!-- Password Form -->
     <div class="fade-in-up delay-3">
       <form method="POST" action="/clubhouse-entry" class="password-form rounded-lg p-6">
@@ -196,31 +117,31 @@
             <span class="block sm:inline">{{ error }}</span>
           </div>
         {% endif %}
-        
+
         <div class="mb-6">
           <label for="password" class="block text-sm font-medium text-green-100 mb-2">
             🔐 Clubhouse Access Code
           </label>
-          <input type="password" 
-                 id="password" 
-                 name="password" 
+          <input type="password"
+                 id="password"
+                 name="password"
                  class="password-input w-full px-4 py-3 rounded-lg text-gray-800 placeholder-gray-500 focus:outline-none"
                  placeholder="Enter access code..."
                  required
                  autocomplete="off">
         </div>
-        
-        <button type="submit" 
+
+        <button type="submit"
                 class="enter-button w-full text-white font-semibold py-3 px-6 rounded-lg focus:outline-none focus:ring-4 focus:ring-green-300">
           🚪 Enter Clubhouse
         </button>
       </form>
-      
+
       <p class="text-xs text-green-200 mt-4 opacity-75">
         Authorized members only • PGG Tour © 2025
       </p>
     </div>
-    
+
   </div>
 
   <!-- Register Service Worker -->
