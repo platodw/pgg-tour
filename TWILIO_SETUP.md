@@ -12,7 +12,7 @@
 After signing up, you'll need these 3 pieces of information:
 
 1. **Account SID** - Found on your Twilio Console dashboard
-2. **Auth Token** - Found on your Twilio Console dashboard  
+2. **Auth Token** - Found on your Twilio Console dashboard
 3. **Phone Number** - You'll get a free trial phone number
 
 ## Step 3: Configure Heroku Environment Variables
@@ -23,14 +23,14 @@ After signing up, you'll need these 3 pieces of information:
 
 ```
 TWILIO_ACCOUNT_SID = your_account_sid_here
-TWILIO_AUTH_TOKEN = your_auth_token_here  
+TWILIO_AUTH_TOKEN = your_auth_token_here
 TWILIO_PHONE_NUMBER = +1234567890
 ```
 
 **Example:**
 ```
-TWILIO_ACCOUNT_SID = AC1234567890abcdef1234567890abcdef
-TWILIO_AUTH_TOKEN = your_auth_token_here
+TWILIO_ACCOUNT_SID = ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+TWILIO_AUTH_TOKEN = your_auth_token_from_twilio_console
 TWILIO_PHONE_NUMBER = +15551234567
 ```
 
