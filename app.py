@@ -26,6 +26,13 @@ def get_season_label(date_obj):
 
 app = Flask(__name__)
 
+# Force HTTPS in production
+@app.before_request
+def force_https():
+    if not request.is_secure and request.headers.get('X-Forwarded-Proto') != 'https':
+        if 'localhost' not in request.host and '127.0.0.1' not in request.host:
+            return redirect(request.url.replace('http://', 'https://'), code=301)
+
 @app.route("/")
 def home():
     """Dashboard home page with latest updates, leaderboard widget, and upcoming events"""

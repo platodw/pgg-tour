@@ -4,12 +4,28 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{% block title %}PGG Tour{% endblock %}</title>
+
+  <!-- PWA Meta Tags -->
+  <meta name="description" content="Professional golf scoring and tournament management for PGG Tour">
+  <meta name="theme-color" content="#16a34a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="PGG Tour">
+  <meta name="mobile-web-app-capable" content="yes">
+
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="/static/manifest.json">
+
+  <!-- Icons -->
+  <link rel="icon" type="image/x-icon" href="/static/favicon.ico" />
+  <link rel="apple-touch-icon" href="/static/icons/icon-192x192.png">
+
+  <!-- Stylesheets -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-  <link rel="icon" type="image/x-icon" href="/static/favicon.ico" />
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -45,6 +61,53 @@
 
   <script>
     lucide.createIcons();
+
+    // Register Service Worker for PWA functionality
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('/static/sw.js')
+          .then(function(registration) {
+            console.log('🚀 PGG Tour PWA: Service Worker registered successfully');
+          })
+          .catch(function(error) {
+            console.log('❌ Service Worker registration failed:', error);
+          });
+      });
+    }
+
+    // PWA Install Prompt
+    let deferredPrompt;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+
+      // Show install button or banner
+      const installBanner = document.createElement('div');
+      installBanner.innerHTML = `
+        <div class="bg-green-600 text-white p-3 text-center fixed top-0 left-0 right-0 z-50">
+          <span class="mr-4">📱 Install PGG Tour app for better experience!</span>
+          <button onclick="installPWA()" class="bg-white text-green-600 px-3 py-1 rounded text-sm font-semibold">
+            Install
+          </button>
+          <button onclick="this.parentElement.parentElement.remove()" class="ml-2 text-white">
+            ✕
+          </button>
+        </div>
+      `;
+      document.body.appendChild(installBanner);
+    });
+
+    function installPWA() {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then((choiceResult) => {
+          if (choiceResult.outcome === 'accepted') {
+            console.log('🎉 User installed PGG Tour PWA');
+          }
+          deferredPrompt = null;
+        });
+      }
+    }
   </script>
 </body>
 </html>
