@@ -9,28 +9,23 @@
   <p class="text-gray-600">Welcome to the {{ season }}</p>
 </div>
 
-<!-- Live Match and Hole in One Section -->
+<!-- Hole in One Pot Section -->
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
 
-  <!-- Live PGG Match -->
+  <!-- Quick Actions -->
   <div class="bg-gradient-to-r from-green-500 to-blue-600 text-white rounded-lg shadow-lg p-6">
-    <div class="flex justify-between items-center mb-4">
-      <h2 class="text-2xl font-bold">🏌️ Live PGG Match</h2>
-      <button onclick="checkForLiveMatch()" class="bg-white bg-opacity-20 text-white px-3 py-1 rounded text-sm hover:bg-opacity-30 transition">
-        🔄 Refresh
-      </button>
-    </div>
+    <h2 class="text-2xl font-bold mb-4">⚡ Quick Actions</h2>
 
-    <div id="live-match-content">
-      <!-- This will be populated by JavaScript -->
-      <div class="text-center py-8">
-        <div class="text-4xl mb-3">⛳</div>
-        <p class="text-lg font-semibold">No PGG Match Being Played</p>
-        <p class="text-sm opacity-75 mt-2">Start entering scores to see live updates</p>
-        <a href="/scorecard" class="inline-block mt-3 bg-white bg-opacity-20 text-white px-4 py-2 rounded hover:bg-opacity-30 transition">
-          📝 Enter Scores
-        </a>
-      </div>
+    <div class="space-y-3">
+      <a href="/scorecard" class="block bg-white bg-opacity-20 text-white px-4 py-3 rounded-lg hover:bg-opacity-30 transition text-center">
+        📝 Enter Scores
+      </a>
+      <a href="/leaderboard" class="block bg-white bg-opacity-20 text-white px-4 py-3 rounded-lg hover:bg-opacity-30 transition text-center">
+        🏆 View Leaderboard
+      </a>
+      <a href="/stats" class="block bg-white bg-opacity-20 text-white px-4 py-3 rounded-lg hover:bg-opacity-30 transition text-center">
+        📊 Player Stats
+      </a>
     </div>
   </div>
 
@@ -202,93 +197,6 @@
 
 
 
-<script>
-// Check for live match data and update the Live PGG Match section
-function checkForLiveMatch() {
-  console.log('🔄 Checking for live match...');
-  const liveMatchContent = document.getElementById('live-match-content');
-
-  // Show loading state
-  liveMatchContent.innerHTML = `
-    <div class="text-center py-4">
-      <div class="text-sm opacity-75">🔄 Checking for live matches...</div>
-    </div>
-  `;
-
-  fetch('/api/live-match-status')
-    .then(response => {
-      console.log('📡 API Response status:', response.status);
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-      return response.json();
-    })
-    .then(data => {
-      console.log('📊 Live match data:', data);
-
-      if (data.hasLiveMatch) {
-        console.log('✅ Live match found!');
-        // Show live scoreboard data
-        const liveIndicator = data.isLive ? '<span class="inline-block w-2 h-2 bg-red-500 rounded-full animate-pulse mr-2"></span>LIVE' : '';
-
-        liveMatchContent.innerHTML = `
-          <div class="text-center">
-            <div class="text-lg font-semibold mb-2">🏌️ Match in Progress</div>
-            ${data.isLive ? `<div class="text-xs mb-3 flex items-center justify-center text-red-200">${liveIndicator}</div>` : ''}
-            <div class="text-sm opacity-75 mb-4">${data.progressText}</div>
-            <div class="space-y-2">
-              ${data.players.map((player, index) => {
-                const position = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : (index + 1);
-                return `
-                  <div class="flex justify-between items-center bg-white bg-opacity-20 rounded px-3 py-2">
-                    <span>${position} ${player.name}</span>
-                    <span class="font-bold">${player.total}</span>
-                  </div>
-                `;
-              }).join('')}
-            </div>
-            <a href="/scorecard" class="inline-block mt-3 bg-white bg-opacity-20 text-white px-4 py-2 rounded hover:bg-opacity-30 transition">
-              ${data.isLive ? '📝 Continue Match' : '📊 View Details'}
-            </a>
-          </div>
-        `;
-      } else {
-        console.log('❌ No live match found');
-        // Show no match message
-        liveMatchContent.innerHTML = `
-          <div class="text-center py-8">
-            <div class="text-4xl mb-3">⛳</div>
-            <p class="text-lg font-semibold">No PGG Match Being Played</p>
-            <p class="text-sm opacity-75 mt-2">Start entering scores to see live updates</p>
-            <a href="/scorecard" class="inline-block mt-3 bg-white bg-opacity-20 text-white px-4 py-2 rounded hover:bg-opacity-30 transition">
-              📝 Enter Scores
-            </a>
-          </div>
-        `;
-      }
-    })
-    .catch(error => {
-      console.error('❌ Error checking live match:', error);
-      liveMatchContent.innerHTML = `
-        <div class="text-center py-8">
-          <div class="text-4xl mb-3">⚠️</div>
-          <p class="text-lg font-semibold">Connection Error</p>
-          <p class="text-sm opacity-75 mt-2">Unable to check for live matches</p>
-          <button onclick="checkForLiveMatch()" class="inline-block mt-3 bg-white bg-opacity-20 text-white px-4 py-2 rounded hover:bg-opacity-30 transition">
-            🔄 Try Again
-          </button>
-        </div>
-      `;
-    });
-}
-
-// Check for live match on page load
-document.addEventListener('DOMContentLoaded', function() {
-  checkForLiveMatch();
-
-  // Refresh every 10 seconds for live updates
-  setInterval(checkForLiveMatch, 10000);
-});
-</script>
+<!-- No JavaScript needed for simplified homepage -->
 
 {% endblock %}
