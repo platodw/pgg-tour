@@ -67,7 +67,20 @@
 <div class="bg-white rounded-lg shadow-md p-6 mb-6">
   <h2 class="text-xl font-semibold mb-4 text-green-700">📅 Schedule New Event (Admin)</h2>
 
+  {% if error_message %}
+    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+      <span class="block sm:inline">{{ error_message }}</span>
+    </div>
+  {% endif %}
+
   <form method="POST" action="/schedule/create" class="space-y-4">
+
+    <!-- Admin Password -->
+    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+      <label class="block text-sm font-medium mb-1 text-yellow-800">🔐 Admin Password:</label>
+      <input type="password" name="admin_password" required class="w-full border rounded p-2" placeholder="Enter admin password to schedule events">
+      <p class="text-xs text-yellow-700 mt-1">Required to create events and send invitations</p>
+    </div>
 
     <!-- Date and Time -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">

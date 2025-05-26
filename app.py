@@ -9,6 +9,14 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
+# Twilio SMS imports
+try:
+    from twilio.rest import Client
+    TWILIO_AVAILABLE = True
+except ImportError:
+    TWILIO_AVAILABLE = False
+    print("⚠️ Twilio not installed - SMS notifications disabled")
+
 def get_season_label(date_obj):
     """
     Calculate season based on November 1 - October 31 year.
@@ -32,6 +40,14 @@ app.secret_key = 'pgg-tour-secret-key-2025-golf-scoring-system'
 # Clubhouse password
 CLUBHOUSE_PASSWORD = 'restorativehealing'
 
+# Admin password for administrative functions
+ADMIN_PASSWORD = 'pgg2024'
+
+# Twilio Configuration (you'll need to set these up)
+TWILIO_ACCOUNT_SID = os.environ.get('TWILIO_ACCOUNT_SID', '')
+TWILIO_AUTH_TOKEN = os.environ.get('TWILIO_AUTH_TOKEN', '')
+TWILIO_PHONE_NUMBER = os.environ.get('TWILIO_PHONE_NUMBER', '')  # Your Twilio phone number
+
 # Authentication decorator
 def require_auth(f):
     """Decorator to require authentication for routes"""
@@ -41,6 +57,57 @@ def require_auth(f):
         return f(*args, **kwargs)
     decorated_function.__name__ = f.__name__
     return decorated_function
+
+def format_phone_number(phone):
+    """Format phone number for SMS (US format)"""
+    if not phone:
+        return None
+
+    # Remove all non-digit characters
+    digits = ''.join(filter(str.isdigit, phone))
+
+    # Handle different formats
+    if len(digits) == 10:
+        # Add US country code
+        return f"+1{digits}"
+    elif len(digits) == 11 and digits.startswith('1'):
+        # Already has country code
+        return f"+{digits}"
+    else:
+        # Invalid format
+        return None
+
+def send_sms_notification(phone_number, message):
+    """Send SMS notification using Twilio"""
+
+    if not TWILIO_AVAILABLE:
+        print("⚠️ Twilio not available - SMS not sent")
+        return False
+
+    if not all([TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER]):
+        print("⚠️ Twilio credentials not configured - SMS not sent")
+        return False
+
+    try:
+        client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
+
+        formatted_phone = format_phone_number(phone_number)
+        if not formatted_phone:
+            print(f"⚠️ Invalid phone number format: {phone_number}")
+            return False
+
+        message = client.messages.create(
+            body=message,
+            from_=TWILIO_PHONE_NUMBER,
+            to=formatted_phone
+        )
+
+        print(f"✅ SMS sent to {formatted_phone}: {message.sid}")
+        return True
+
+    except Exception as e:
+        print(f"❌ Error sending SMS to {phone_number}: {e}")
+        return False
 
 # Force HTTPS in production
 @app.before_request
@@ -436,7 +503,7 @@ def import_scores():
 
     # Simple password protection
     password = request.form.get("import_password", "")
-    if password != "pgg2024":  # Change this to your desired password
+    if password != ADMIN_PASSWORD:
         return redirect(url_for("stats"))
 
     # Check if user wants to clear existing data first
@@ -553,8 +620,18 @@ def import_scores():
     return redirect(url_for("stats"))
 
 @app.route("/schedule")
+@require_auth
 def schedule():
     """Schedule page showing upcoming events and admin interface"""
+
+    # Check for error messages
+    error_type = request.args.get('error')
+    error_message = None
+
+    if error_type == 'invalid_password':
+        error_message = "Invalid admin password. Please try again."
+    elif error_type == 'missing_fields':
+        error_message = "Please fill in all required fields."
 
     conn = sqlite3.connect("golf_scores.db")
     c = conn.cursor()
@@ -588,11 +665,19 @@ def schedule():
                          upcoming_events=upcoming_events,
                          players=players,
                          courses=courses,
-                         datetime=datetime)
+                         datetime=datetime,
+                         error_message=error_message)
 
 @app.route("/schedule/create", methods=["POST"])
+@require_auth
 def create_event():
-    """Create a new scheduled event and send invitations"""
+    """Create a new scheduled event and send invitations (admin password protected)"""
+
+    # Check admin password
+    admin_password = request.form.get("admin_password", "").strip()
+    if admin_password != ADMIN_PASSWORD:
+        # Redirect back to schedule with error (we'll add error handling)
+        return redirect(url_for("schedule") + "?error=invalid_password")
 
     event_date = request.form.get("event_date")
     event_time = request.form.get("event_time")
@@ -601,7 +686,7 @@ def create_event():
     selected_players = request.form.getlist("players")
 
     if not event_date or not selected_players:
-        return redirect(url_for("schedule"))
+        return redirect(url_for("schedule") + "?error=missing_fields")
 
     conn = sqlite3.connect("golf_scores.db")
     c = conn.cursor()
@@ -624,8 +709,8 @@ def create_event():
 
         conn.commit()
 
-        # Send email invitations
-        send_event_invitations(event_id, selected_players, event_date, event_time, course, description)
+        # Send SMS notifications
+        send_sms_invitations(event_id, selected_players, event_date, event_time, course, description)
 
     except Exception as e:
         print(f"Error creating event: {e}")
@@ -636,41 +721,59 @@ def create_event():
 
     return redirect(url_for("schedule"))
 
-def send_event_invitations(event_id, player_ids, event_date, event_time, course, description):
-    """Send email invitations to selected players"""
-
-    # Note: This is a placeholder for email functionality
-    # You'll need to configure SMTP settings for actual email sending
+def send_sms_invitations(event_id, player_ids, event_date, event_time, course, description):
+    """Send SMS invitations to selected players"""
 
     conn = sqlite3.connect("golf_scores.db")
     c = conn.cursor()
 
-    # Get player email addresses
+    # Get player names and phone numbers
     placeholders = ','.join('?' * len(player_ids))
     c.execute(f"""
-        SELECT name, email FROM players
-        WHERE id IN ({placeholders}) AND email IS NOT NULL
+        SELECT name, phone FROM players
+        WHERE id IN ({placeholders}) AND phone IS NOT NULL AND phone != ''
     """, player_ids)
 
-    players_with_emails = c.fetchall()
+    players = c.fetchall()
     conn.close()
 
-    # For now, just print the invitation details
-    print(f"📧 Would send invitations for event {event_id}:")
-    print(f"   Date: {event_date}")
-    print(f"   Time: {event_time}")
-    print(f"   Course: {course}")
-    print(f"   Description: {description}")
-    print(f"   Players to notify:")
+    if not players:
+        print("⚠️ No players with phone numbers found")
+        return
 
-    for name, email in players_with_emails:
-        if email:
-            print(f"     - {name} ({email})")
+    # Format the event details
+    event_datetime = f"{event_date}"
+    if event_time:
+        # Convert 24-hour time to 12-hour format
+        try:
+            time_obj = datetime.strptime(event_time, '%H:%M')
+            formatted_time = time_obj.strftime('%I:%M %p')
+            event_datetime += f" at {formatted_time}"
+        except:
+            event_datetime += f" at {event_time}"
+
+    # Create SMS message
+    message = f"""🏌️ PGG Tour Event Scheduled!
+
+📅 {event_datetime}
+🏌️ Course: {course}
+👥 Players: {', '.join([name for name, _ in players])}
+
+{description if description else 'Get ready for some golf!'}
+
+See you on the course!
+- PGG Tour"""
+
+    # Send SMS to each player
+    sent_count = 0
+    for name, phone in players:
+        if send_sms_notification(phone, message):
+            sent_count += 1
+            print(f"📱 SMS sent to {name} ({phone})")
         else:
-            print(f"     - {name} (no email)")
+            print(f"❌ Failed to send SMS to {name} ({phone})")
 
-    # TODO: Implement actual email sending here
-    # This would require SMTP configuration
+    print(f"📱 SMS invitations sent: {sent_count}/{len(players)} successful")
 
 @app.route("/players/manage")
 def manage_players():
