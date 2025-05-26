@@ -35,33 +35,77 @@
 <body class="bg-gray-100">
 
   <!-- Navigation -->
-  <nav class="bg-green-800 text-white px-6 py-4 shadow">
-    <div class="max-w-7xl mx-auto flex justify-between items-center">
-      <div class="flex items-center">
-        <img src="/static/logo.jpg" alt="PGG Tour Logo" class="w-10 h-10 rounded-full mr-3">
-        <span class="text-xl font-bold">PGG Tour</span>
+  <nav class="bg-green-800 text-white shadow">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6">
+      <div class="flex justify-between items-center h-16">
+        <!-- Logo and Brand -->
+        <div class="flex items-center">
+          <img src="/static/logo.jpg" alt="PGG Tour Logo" class="w-8 h-8 sm:w-10 sm:h-10 rounded-full mr-2 sm:mr-3">
+          <span class="text-lg sm:text-xl font-bold">PGG Tour</span>
+        </div>
+
+        <!-- Desktop Navigation -->
+        <div class="hidden lg:flex space-x-4 items-center text-sm">
+          <a href="/" class="flex items-center gap-1 hover:bg-green-700 px-3 py-2 rounded transition"><i data-lucide="home" class="w-4 h-4"></i>Home</a>
+          <a href="/scorecard" class="flex items-center gap-1 hover:bg-green-700 px-3 py-2 rounded transition"><i data-lucide="edit" class="w-4 h-4"></i>Scorecard</a>
+          <a href="/leaderboard" class="flex items-center gap-1 hover:bg-green-700 px-3 py-2 rounded transition"><i data-lucide="bar-chart-3" class="w-4 h-4"></i>Leaderboard</a>
+          <a href="/stats" class="flex items-center gap-1 hover:bg-green-700 px-3 py-2 rounded transition"><i data-lucide="activity" class="w-4 h-4"></i>Stats</a>
+          <a href="/schedule" class="flex items-center gap-1 hover:bg-green-700 px-3 py-2 rounded transition"><i data-lucide="calendar" class="w-4 h-4"></i>Schedule</a>
+          <a href="/roster" class="flex items-center gap-1 hover:bg-green-700 px-3 py-2 rounded transition"><i data-lucide="users" class="w-4 h-4"></i>Roster</a>
+          <a href="/hole-in-one" class="flex items-center gap-1 hover:bg-green-700 px-3 py-2 rounded transition"><i data-lucide="target" class="w-4 h-4"></i>Hole in One</a>
+          <a href="/awards" class="flex items-center gap-1 hover:bg-green-700 px-3 py-2 rounded transition"><i data-lucide="award" class="w-4 h-4"></i>Awards</a>
+          <a href="/logout" class="flex items-center gap-1 hover:bg-red-700 px-3 py-2 rounded transition text-red-300"><i data-lucide="log-out" class="w-4 h-4"></i>Logout</a>
+        </div>
+
+        <!-- Mobile Menu Button -->
+        <div class="lg:hidden">
+          <button type="button" id="mobile-menu-button" class="text-white hover:bg-green-700 p-2 rounded transition">
+            <i data-lucide="menu" class="w-6 h-6"></i>
+          </button>
+        </div>
       </div>
-      <ul class="flex space-x-6 items-center text-sm">
-        <li><a href="/" class="flex items-center gap-1 hover:underline"><i data-lucide="home" class="w-4 h-4"></i>Home</a></li>
-        <li><a href="/scorecard" class="flex items-center gap-1 hover:underline"><i data-lucide="edit" class="w-4 h-4"></i>Scorecard</a></li>
-        <li><a href="/leaderboard" class="flex items-center gap-1 hover:underline"><i data-lucide="bar-chart-3" class="w-4 h-4"></i>Leaderboard</a></li>
-        <li><a href="/stats" class="flex items-center gap-1 hover:underline"><i data-lucide="activity" class="w-4 h-4"></i>Stats</a></li>
-        <li><a href="/schedule" class="flex items-center gap-1 hover:underline"><i data-lucide="calendar" class="w-4 h-4"></i>Schedule</a></li>
-        <li><a href="/roster" class="flex items-center gap-1 hover:underline"><i data-lucide="users" class="w-4 h-4"></i>Roster</a></li>
-        <li><a href="/hole-in-one" class="flex items-center gap-1 hover:underline"><i data-lucide="target" class="w-4 h-4"></i>Hole in One</a></li>
-        <li><a href="/awards" class="flex items-center gap-1 hover:underline"><i data-lucide="award" class="w-4 h-4"></i>Awards</a></li>
-        <li><a href="/logout" class="flex items-center gap-1 hover:underline text-red-300 hover:text-red-200"><i data-lucide="log-out" class="w-4 h-4"></i>Logout</a></li>
-      </ul>
+
+      <!-- Mobile Navigation Menu -->
+      <div id="mobile-menu" class="lg:hidden hidden bg-green-700 rounded-lg mt-2 mb-4">
+        <div class="px-2 pt-2 pb-3 space-y-1">
+          <a href="/" class="flex items-center gap-2 text-white hover:bg-green-600 px-3 py-3 rounded text-base font-medium transition"><i data-lucide="home" class="w-5 h-5"></i>Home</a>
+          <a href="/scorecard" class="flex items-center gap-2 text-white hover:bg-green-600 px-3 py-3 rounded text-base font-medium transition"><i data-lucide="edit" class="w-5 h-5"></i>Scorecard</a>
+          <a href="/leaderboard" class="flex items-center gap-2 text-white hover:bg-green-600 px-3 py-3 rounded text-base font-medium transition"><i data-lucide="bar-chart-3" class="w-5 h-5"></i>Leaderboard</a>
+          <a href="/stats" class="flex items-center gap-2 text-white hover:bg-green-600 px-3 py-3 rounded text-base font-medium transition"><i data-lucide="activity" class="w-5 h-5"></i>Stats</a>
+          <a href="/schedule" class="flex items-center gap-2 text-white hover:bg-green-600 px-3 py-3 rounded text-base font-medium transition"><i data-lucide="calendar" class="w-5 h-5"></i>Schedule</a>
+          <a href="/roster" class="flex items-center gap-2 text-white hover:bg-green-600 px-3 py-3 rounded text-base font-medium transition"><i data-lucide="users" class="w-5 h-5"></i>Roster</a>
+          <a href="/hole-in-one" class="flex items-center gap-2 text-white hover:bg-green-600 px-3 py-3 rounded text-base font-medium transition"><i data-lucide="target" class="w-5 h-5"></i>Hole in One</a>
+          <a href="/awards" class="flex items-center gap-2 text-white hover:bg-green-600 px-3 py-3 rounded text-base font-medium transition"><i data-lucide="award" class="w-5 h-5"></i>Awards</a>
+          <a href="/logout" class="flex items-center gap-2 text-red-300 hover:bg-red-700 px-3 py-3 rounded text-base font-medium transition"><i data-lucide="log-out" class="w-5 h-5"></i>Logout</a>
+        </div>
+      </div>
     </div>
   </nav>
 
   <!-- Page Content -->
-  <main class="p-6 max-w-7xl mx-auto">
+  <main class="p-4 sm:p-6 max-w-7xl mx-auto">
     {% block content %}{% endblock %}
   </main>
 
   <script>
     lucide.createIcons();
+
+    // Mobile menu toggle
+    document.getElementById('mobile-menu-button').addEventListener('click', function() {
+      const mobileMenu = document.getElementById('mobile-menu');
+      const menuIcon = this.querySelector('i');
+
+      if (mobileMenu.classList.contains('hidden')) {
+        mobileMenu.classList.remove('hidden');
+        menuIcon.setAttribute('data-lucide', 'x');
+      } else {
+        mobileMenu.classList.add('hidden');
+        menuIcon.setAttribute('data-lucide', 'menu');
+      }
+
+      // Re-render icons after changing
+      lucide.createIcons();
+    });
 
     // Register Service Worker for PWA functionality
     if ('serviceWorker' in navigator) {
