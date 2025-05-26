@@ -223,10 +223,52 @@ def home():
 def live_match_status():
     """API endpoint to check if there's a live match in progress"""
 
+    # First check if there's an active scorecard session
+    if session.get('active_scorecard'):
+        scorecard_data = session.get('scorecard_data', {})
+
+        if scorecard_data.get('players'):
+            # Build live data from session
+            players_data = []
+            max_holes = 0
+
+            for player_data in scorecard_data['players']:
+                if player_data.get('name'):
+                    total = sum([score for score in player_data.get('holes', []) if score > 0])
+                    holes_played = len([score for score in player_data.get('holes', []) if score > 0])
+                    max_holes = max(max_holes, holes_played)
+
+                    if total > 0:  # Only include players with scores
+                        players_data.append({
+                            'name': player_data['name'],
+                            'total': total,
+                            'holesPlayed': holes_played
+                        })
+
+            if players_data:
+                # Sort by total score (highest first for PGG Tour)
+                players_data.sort(key=lambda x: x['total'], reverse=True)
+
+                # Determine progress text
+                if max_holes == 0:
+                    progress_text = "Starting Soon"
+                elif max_holes == 9:
+                    progress_text = "Round Complete"
+                else:
+                    progress_text = f"Through {max_holes} Hole{'s' if max_holes != 1 else ''}"
+
+                return jsonify({
+                    'hasLiveMatch': True,
+                    'progressText': progress_text,
+                    'players': players_data[:4],  # Top 4 players
+                    'holesPlayed': max_holes,
+                    'isLive': True  # Flag to indicate this is live data
+                })
+
+    # If no active session, check for submitted scores from today
     conn = sqlite3.connect("golf_scores.db")
     c = conn.cursor()
 
-    # Check for scores from today
     today = datetime.today().strftime('%Y-%m-%d')
     c.execute("""
         SELECT player_name, total,
@@ -280,6 +322,28 @@ def live_match_status():
         'players': players_data[:4],  # Top 4 players
         'holesPlayed': max_holes_played
     })
+
+@app.route("/api/update-live-scorecard", methods=["POST"])
+@require_auth
+def update_live_scorecard():
+    """Update live scorecard data in session"""
+
+    try:
+        data = request.get_json()
+
+        # Mark that there's an active scorecard session
+        session['active_scorecard'] = True
+        session['scorecard_data'] = {
+            'players': data.get('players', []),
+            'course': data.get('course', ''),
+            'nine': data.get('nine', ''),
+            'last_updated': datetime.now().isoformat()
+        }
+
+        return jsonify({'success': True})
+
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
 
 @app.route("/scorecard", methods=["GET", "POST"])
 @require_auth

@@ -208,17 +208,23 @@ $(document).ready(function () {
 var liveScoreboardWindow = null;
 
 function updateTotals() {
-  var rows = document.querySelectorAll('tbody tr');
+  var rows = document.querySelectorAll('tbody tr, .block.sm\\:hidden > div[data-player]');
   console.log('Updating totals for ' + rows.length + ' rows');
+
+  var playersData = [];
 
   for (var i = 0; i < rows.length; i++) {
     var row = rows[i];
     var inputs = row.querySelectorAll('.hole-input');
+    var playerSelect = row.querySelector('.player-select');
     var total = 0;
+    var holes = [];
 
+    // Calculate total and collect hole scores
     for (var j = 0; j < inputs.length; j++) {
       var value = parseInt(inputs[j].value) || 0;
       total += value;
+      holes.push(value);
     }
 
     var totalCell = row.querySelector('.total-cell');
@@ -226,10 +232,53 @@ function updateTotals() {
       totalCell.textContent = total;
       console.log('Row ' + (i + 1) + ' total: ' + total);
     }
+
+    // Collect player data for live updates
+    if (playerSelect && playerSelect.value) {
+      playersData.push({
+        name: playerSelect.value,
+        total: total,
+        holes: holes
+      });
+    }
   }
+
+  // Send live update to server
+  updateLiveScorecard(playersData);
 
   // Auto-update live scoreboard if it's open
   updateLiveScoreboard();
+}
+
+function updateLiveScorecard(playersData) {
+  // Only send if we have active players
+  if (playersData.length > 0) {
+    var courseSelect = document.getElementById('course-select');
+    var nineRadio = document.querySelector('input[name="nine"]:checked');
+
+    var data = {
+      players: playersData,
+      course: courseSelect ? courseSelect.value : '',
+      nine: nineRadio ? nineRadio.value : 'Front'
+    };
+
+    fetch('/api/update-live-scorecard', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        console.log('✅ Live scorecard updated');
+      }
+    })
+    .catch(error => {
+      console.log('⚠️ Error updating live scorecard:', error);
+    });
+  }
 }
 
 

@@ -210,9 +210,12 @@ function checkForLiveMatch() {
 
       if (data.hasLiveMatch) {
         // Show live scoreboard data
+        const liveIndicator = data.isLive ? '<span class="inline-block w-2 h-2 bg-red-500 rounded-full animate-pulse mr-2"></span>LIVE' : '';
+
         liveMatchContent.innerHTML = `
           <div class="text-center">
-            <div class="text-lg font-semibold mb-3">🏌️ Match in Progress</div>
+            <div class="text-lg font-semibold mb-2">🏌️ Match in Progress</div>
+            ${data.isLive ? `<div class="text-xs mb-3 flex items-center justify-center text-red-200">${liveIndicator}</div>` : ''}
             <div class="text-sm opacity-75 mb-4">${data.progressText}</div>
             <div class="space-y-2">
               ${data.players.map((player, index) => {
@@ -226,7 +229,7 @@ function checkForLiveMatch() {
               }).join('')}
             </div>
             <a href="/scorecard" class="inline-block mt-3 bg-white bg-opacity-20 text-white px-4 py-2 rounded hover:bg-opacity-30 transition">
-              📝 Continue Match
+              ${data.isLive ? '📝 Continue Match' : '📊 View Details'}
             </a>
           </div>
         `;
@@ -253,8 +256,8 @@ function checkForLiveMatch() {
 document.addEventListener('DOMContentLoaded', function() {
   checkForLiveMatch();
 
-  // Refresh every 30 seconds
-  setInterval(checkForLiveMatch, 30000);
+  // Refresh every 10 seconds for live updates
+  setInterval(checkForLiveMatch, 10000);
 });
 </script>
 
