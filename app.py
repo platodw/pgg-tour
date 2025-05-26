@@ -2,7 +2,7 @@ import os
 import json
 import sqlite3
 import subprocess
-from flask import Flask, render_template, request, redirect, url_for, jsonify
+from flask import Flask, render_template, request, redirect, url_for, jsonify, session
 
 from datetime import datetime, timedelta
 import smtplib
@@ -26,6 +26,22 @@ def get_season_label(date_obj):
 
 app = Flask(__name__)
 
+# Secret key for sessions (change this to a random secret key)
+app.secret_key = 'pgg-tour-secret-key-2025-golf-scoring-system'
+
+# Clubhouse password
+CLUBHOUSE_PASSWORD = 'restorativehealing'
+
+# Authentication decorator
+def require_auth(f):
+    """Decorator to require authentication for routes"""
+    def decorated_function(*args, **kwargs):
+        if not session.get('authenticated'):
+            return redirect(url_for('clubhouse_entry'))
+        return f(*args, **kwargs)
+    decorated_function.__name__ = f.__name__
+    return decorated_function
+
 # Force HTTPS in production
 @app.before_request
 def force_https():
@@ -34,6 +50,40 @@ def force_https():
             return redirect(request.url.replace('http://', 'https://'), code=301)
 
 @app.route("/")
+def index():
+    """Main entry point - redirect to clubhouse entry if not authenticated"""
+    if session.get('authenticated'):
+        return redirect(url_for('home'))
+    return redirect(url_for('clubhouse_entry'))
+
+@app.route("/clubhouse-entry", methods=["GET", "POST"])
+def clubhouse_entry():
+    """Clubhouse entry screen with password protection"""
+
+    if request.method == "POST":
+        password = request.form.get("password", "").strip()
+
+        if password == CLUBHOUSE_PASSWORD:
+            session['authenticated'] = True
+            session.permanent = True  # Keep session across browser restarts
+            return redirect(url_for('home'))
+        else:
+            return render_template("entry.html", error="Invalid access code. Please try again.")
+
+    # If already authenticated, go to home
+    if session.get('authenticated'):
+        return redirect(url_for('home'))
+
+    return render_template("entry.html")
+
+@app.route("/logout")
+def logout():
+    """Logout and return to clubhouse entry"""
+    session.clear()
+    return redirect(url_for('clubhouse_entry'))
+
+@app.route("/home")
+@require_auth
 def home():
     """Dashboard home page with latest updates, leaderboard widget, and upcoming events"""
 
@@ -102,6 +152,7 @@ def home():
                          unique_players=unique_players)
 
 @app.route("/api/live-match-status")
+@require_auth
 def live_match_status():
     """API endpoint to check if there's a live match in progress"""
 
@@ -164,6 +215,7 @@ def live_match_status():
     })
 
 @app.route("/scorecard", methods=["GET", "POST"])
+@require_auth
 def scorecard():
     if request.method == "POST":
         date = request.form.get("date")
@@ -227,6 +279,7 @@ def scorecard():
     return render_template("scorecard.html", courses=courses, players=players)
 
 @app.route("/leaderboard")
+@require_auth
 def leaderboard():
     # Step 1: Get the current season based on today's date
     today = datetime.today()
@@ -252,6 +305,7 @@ def leaderboard():
     return render_template("leaderboard.html", leaderboard=leaderboard_data, season=current_season)
 
 @app.route("/stats")
+@require_auth
 def stats():
     """Stats page with filtering and comprehensive statistics"""
 
