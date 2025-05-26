@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Players | PGG Tour{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+  <h1 class="text-3xl font-bold text-green-800">👥 Manage Players</h1>
+</div>
+
+<!-- Back to Schedule -->
+<div class="mb-4">
+  <a href="/schedule" class="text-blue-600 hover:text-blue-800">
+    ← Back to Schedule
+  </a>
+</div>
+
+<!-- Player Management -->
+<div class="bg-white rounded-lg shadow-md p-6">
+  <h2 class="text-xl font-semibold mb-4">👥 Player Contact Information</h2>
+  <p class="text-gray-600 mb-6">Add email addresses and phone numbers to enable event notifications.</p>
+
+  <div class="space-y-4">
+    {% for player_id, name, email, phone, active in players %}
+      <form method="POST" action="/players/update" class="border rounded-lg p-4 hover:bg-gray-50">
+        <input type="hidden" name="player_id" value="{{ player_id }}">
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
+          <!-- Player Name -->
+          <div>
+            <label class="block text-sm font-medium mb-1">Player Name:</label>
+            <div class="font-semibold text-green-700">{{ name }}</div>
+          </div>
+
+          <!-- Email -->
+          <div>
+            <label class="block text-sm font-medium mb-1">Email Address:</label>
+            <input
+              type="email"
+              name="email"
+              value="{{ email or '' }}"
+              placeholder="player@example.com"
+              class="w-full border rounded p-2 text-sm"
+            >
+          </div>
+
+          <!-- Phone -->
+          <div>
+            <label class="block text-sm font-medium mb-1">Phone (Optional):</label>
+            <input
+              type="tel"
+              name="phone"
+              value="{{ phone or '' }}"
+              placeholder="(555) 123-4567"
+              class="w-full border rounded p-2 text-sm"
+            >
+          </div>
+
+          <!-- Update Button -->
+          <div>
+            <label class="block text-sm font-medium mb-1">&nbsp;</label>
+            <button
+              type="submit"
+              class="w-full bg-blue-600 text-white px-3 py-2 rounded hover:bg-blue-700 transition text-sm"
+            >
+              Update
+            </button>
+          </div>
+        </div>
+
+        <!-- Status Indicator -->
+        <div class="mt-2 flex items-center space-x-4 text-xs">
+          {% if email %}
+            <span class="text-green-600">✅ Email configured - will receive invitations</span>
+          {% else %}
+            <span class="text-red-600">⚠️ No email - cannot receive invitations</span>
+          {% endif %}
+
+          {% if not active %}
+            <span class="text-gray-500">🚫 Inactive player</span>
+          {% endif %}
+        </div>
+      </form>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Email Configuration Help -->
+<div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mt-6">
+  <h3 class="text-lg font-semibold text-blue-800 mb-3">📧 Email System Setup</h3>
+  <div class="text-blue-700 space-y-2 text-sm">
+    <p><strong>Current Status:</strong> Email invitations are configured but not yet active.</p>
+    <p><strong>To enable email sending:</strong></p>
+    <ul class="list-disc list-inside ml-4 space-y-1">
+      <li>Configure SMTP settings in the application</li>
+      <li>Add your email server credentials</li>
+      <li>Test email functionality</li>
+    </ul>
+    <p class="mt-3"><strong>For now:</strong> Event invitations will be logged to the console when events are created.</p>
+  </div>
+</div>
+
+<!-- Bulk Actions -->
+<div class="bg-gray-50 rounded-lg p-6 mt-6">
+  <h3 class="text-lg font-semibold mb-3">🔧 Bulk Actions</h3>
+  <div class="space-y-3">
+    <button
+      onclick="exportPlayerEmails()"
+      class="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 transition"
+    >
+      📋 Export Email List
+    </button>
+
+    <button
+      onclick="showImportHelp()"
+      class="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 transition ml-2"
+    >
+      📥 Import Help
+    </button>
+  </div>
+</div>
+
+<script>
+function exportPlayerEmails() {
+  const players = [
+    {% for player_id, name, email, phone, active in players %}
+      {% if email %}
+        "{{ name }} <{{ email }}>",
+      {% endif %}
+    {% endfor %}
+  ];
+
+  if (players.length === 0) {
+    alert('No players with email addresses found.');
+    return;
+  }
+
+  const emailList = players.join('\n');
+
+  // Create a temporary textarea to copy to clipboard
+  const textarea = document.createElement('textarea');
+  textarea.value = emailList;
+  document.body.appendChild(textarea);
+  textarea.select();
+  document.execCommand('copy');
+  document.body.removeChild(textarea);
+
+  alert(`Copied ${players.length} email addresses to clipboard!`);
+}
+
+function showImportHelp() {
+  alert(`To bulk import player emails:
+
+1. Export your current player list
+2. Edit the emails in a spreadsheet
+3. Contact your developer to implement bulk import
+4. Or continue updating emails individually here
+
+Current format: "Player Name <email@example.com>"`);
+}
+
+// Auto-save functionality (optional enhancement)
+function setupAutoSave() {
+  const forms = document.querySelectorAll('form');
+  forms.forEach(form => {
+    const inputs = form.querySelectorAll('input[type="email"], input[type="tel"]');
+    inputs.forEach(input => {
+      input.addEventListener('blur', function() {
+        // Could implement auto-save on blur
+        // For now, users need to click Update button
+      });
+    });
+  });
+}
+
+document.addEventListener('DOMContentLoaded', setupAutoSave);
+</script>
+
+{% endblock %}

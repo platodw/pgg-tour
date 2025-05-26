@@ -1,0 +1,327 @@
+{% extends "base.html" %}
+
+{% block title %}Awards | PGG Tour{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+  <h1 class="text-3xl font-bold text-green-800">🏆 PGG Tour Awards</h1>
+</div>
+
+<!-- Admin Section - Add New Award -->
+<div class="bg-white rounded-lg shadow-md p-6 mb-6" id="adminSection" style="display: none;">
+  <h2 class="text-xl font-semibold mb-4 text-green-700">🏆 Add New Award (Admin)</h2>
+
+  <form method="POST" action="/awards/add" class="space-y-4">
+
+    <!-- Password -->
+    <div>
+      <label class="block text-sm font-medium mb-1">Admin Password:</label>
+      <input type="password" name="password" required class="w-full border rounded p-2" placeholder="Enter admin password">
+    </div>
+
+    <!-- Season and Date -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm font-medium mb-1">Season:</label>
+        <input type="text" name="season" required class="w-full border rounded p-2" placeholder="e.g., 2024 Season">
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Award Date:</label>
+        <input type="date" name="award_date" class="w-full border rounded p-2">
+      </div>
+    </div>
+
+    <!-- Award Category -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm font-medium mb-1">Award Category:</label>
+        <select name="category" class="w-full border rounded p-2">
+          <option value="">-- Select Category --</option>
+          {% for category in categories %}
+            <option value="{{ category }}">{{ category }}</option>
+          {% endfor %}
+          <option value="">-- Or enter custom below --</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Custom Category:</label>
+        <input type="text" name="custom_category" class="w-full border rounded p-2" placeholder="Enter new category">
+      </div>
+    </div>
+
+    <!-- Player and Description -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm font-medium mb-1">Player:</label>
+        <select name="player_name" required class="w-full border rounded p-2">
+          <option value="">-- Select Player --</option>
+          {% for player in players %}
+            <option value="{{ player }}">{{ player }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Description:</label>
+        <input type="text" name="description" class="w-full border rounded p-2" placeholder="Award description">
+      </div>
+    </div>
+
+    <!-- Submit Button -->
+    <div>
+      <button type="submit" class="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 transition">
+        🏆 Add Award
+      </button>
+    </div>
+  </form>
+</div>
+
+<!-- Import Historical Data Section -->
+<div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6" id="importSection" style="display: none;">
+  <h2 class="text-xl font-semibold mb-4 text-blue-700">📥 Import Historical Awards</h2>
+
+  <form method="POST" action="/awards/import" class="space-y-4">
+
+    <!-- Password -->
+    <div>
+      <label class="block text-sm font-medium mb-1">Admin Password:</label>
+      <input type="password" name="import_password" required class="w-full border rounded p-2" placeholder="Enter admin password">
+    </div>
+
+    <!-- Data Format Instructions -->
+    <div class="bg-white border rounded p-4 text-sm">
+      <h4 class="font-semibold mb-2">📋 Data Format (CSV):</h4>
+      <p class="mb-2">Enter one award per line in this format:</p>
+      <code class="bg-gray-100 p-2 block">Season,Category,Player,Description,Date</code>
+      <p class="mt-2 text-gray-600">Example:</p>
+      <code class="bg-gray-100 p-2 block text-xs">
+2023 Season,Season Champion,John Doe,Winner of 2023 season,2023-10-31<br>
+2023 Season,Most Improved,Jane Smith,Showed great improvement,2023-10-31<br>
+2022 Season,Season Champion,Bob Johnson,2022 champion,2022-10-31
+      </code>
+    </div>
+
+    <!-- Data Input -->
+    <div>
+      <label class="block text-sm font-medium mb-1">Awards Data:</label>
+      <textarea name="awards_data" rows="8" class="w-full border rounded p-2" placeholder="Paste your historical awards data here..."></textarea>
+    </div>
+
+    <!-- Submit Button -->
+    <div>
+      <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition">
+        📥 Import Awards
+      </button>
+    </div>
+  </form>
+</div>
+
+<!-- Awards Display by Season -->
+<div class="space-y-6">
+  {% if awards_by_season %}
+    {% for season, awards in awards_by_season.items() %}
+      <div class="bg-white rounded-lg shadow-md p-6">
+        <h2 class="text-2xl font-bold text-green-700 mb-4 border-b border-green-200 pb-2">
+          🏆 {{ season }}
+        </h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {% for award in awards %}
+            <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
+              <div class="flex items-start space-x-3">
+                <div class="text-2xl">🏆</div>
+                <div class="flex-1">
+                  <h3 class="font-semibold text-lg text-green-700">{{ award.category }}</h3>
+                  <p class="text-xl font-bold text-gray-800">{{ award.player }}</p>
+
+                  {% if award.description %}
+                    <p class="text-sm text-gray-600 mt-1">{{ award.description }}</p>
+                  {% endif %}
+
+                  {% if award.award_date %}
+                    <p class="text-xs text-gray-500 mt-2">{{ award.award_date }}</p>
+                  {% endif %}
+
+                  <!-- Admin Actions -->
+                  <div class="mt-3 flex space-x-2">
+                    <button onclick="editAward({{ award.id }}, '{{ season }}', '{{ award.category }}', '{{ award.player }}', '{{ award.description or '' }}', '{{ award.award_date or '' }}')"
+                            class="text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600">
+                      Edit
+                    </button>
+                    <button onclick="deleteAward({{ award.id }}, '{{ award.category }}', '{{ award.player }}')"
+                            class="text-xs bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600">
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    {% endfor %}
+  {% else %}
+    <div class="bg-white rounded-lg shadow-md p-12 text-center">
+      <div class="text-6xl mb-4">🏆</div>
+      <h2 class="text-2xl font-bold text-gray-700 mb-2">No Awards Yet</h2>
+      <p class="text-gray-600 mb-6">Start recognizing your golf league champions!</p>
+      <button onclick="toggleAdmin()" class="bg-green-600 text-white px-6 py-3 rounded hover:bg-green-700 transition">
+        Add First Award
+      </button>
+    </div>
+  {% endif %}
+</div>
+
+<!-- Admin Toggle Buttons -->
+<div class="text-center mt-8 mb-6">
+  <button onclick="toggleAdmin()" class="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 transition mr-2">
+    🔧 Admin Panel
+  </button>
+  <button onclick="toggleImport()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">
+    📥 Import Data
+  </button>
+</div>
+
+<!-- Edit Award Modal -->
+<div id="editAwardModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+  <div class="flex items-center justify-center min-h-screen p-4">
+    <div class="bg-white rounded-lg p-6 w-full max-w-lg">
+      <h3 class="text-lg font-semibold mb-4">Edit Award</h3>
+
+      <form method="POST" id="editAwardForm">
+        <input type="hidden" name="password" id="editPassword">
+
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium mb-1">Admin Password:</label>
+            <input type="password" id="editPasswordInput" required class="w-full border rounded p-2" placeholder="Enter admin password">
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium mb-1">Season:</label>
+              <input type="text" name="season" id="editSeason" required class="w-full border rounded p-2">
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1">Award Date:</label>
+              <input type="date" name="award_date" id="editAwardDate" class="w-full border rounded p-2">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium mb-1">Award Category:</label>
+            <input type="text" name="custom_category" id="editCategory" required class="w-full border rounded p-2">
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium mb-1">Player:</label>
+            <select name="player_name" id="editPlayer" required class="w-full border rounded p-2">
+              <option value="">-- Select Player --</option>
+              {% for player in players %}
+                <option value="{{ player }}">{{ player }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium mb-1">Description:</label>
+            <input type="text" name="description" id="editDescription" class="w-full border rounded p-2">
+          </div>
+        </div>
+
+        <div class="flex space-x-3 mt-6">
+          <button type="submit" class="flex-1 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+            Save Changes
+          </button>
+          <button type="button" onclick="closeEditModal()" class="flex-1 bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">
+            Cancel
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+function toggleAdmin() {
+  const section = document.getElementById('adminSection');
+  const importSection = document.getElementById('importSection');
+
+  if (section.style.display === 'none') {
+    section.style.display = 'block';
+    importSection.style.display = 'none';
+  } else {
+    section.style.display = 'none';
+  }
+}
+
+function toggleImport() {
+  const section = document.getElementById('importSection');
+  const adminSection = document.getElementById('adminSection');
+
+  if (section.style.display === 'none') {
+    section.style.display = 'block';
+    adminSection.style.display = 'none';
+  } else {
+    section.style.display = 'none';
+  }
+}
+
+function editAward(id, season, category, player, description, awardDate) {
+  document.getElementById('editAwardForm').action = `/awards/edit/${id}`;
+  document.getElementById('editSeason').value = season;
+  document.getElementById('editCategory').value = category;
+  document.getElementById('editPlayer').value = player;
+  document.getElementById('editDescription').value = description;
+  document.getElementById('editAwardDate').value = awardDate;
+
+  document.getElementById('editAwardModal').classList.remove('hidden');
+}
+
+function closeEditModal() {
+  document.getElementById('editAwardModal').classList.add('hidden');
+  document.getElementById('editPasswordInput').value = '';
+}
+
+function deleteAward(id, category, player) {
+  const password = prompt(`Delete award "${category}" for ${player}?\n\nEnter admin password to confirm:`);
+
+  if (password) {
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = `/awards/delete/${id}`;
+
+    const passwordInput = document.createElement('input');
+    passwordInput.type = 'hidden';
+    passwordInput.name = 'password';
+    passwordInput.value = password;
+    form.appendChild(passwordInput);
+
+    document.body.appendChild(form);
+    form.submit();
+  }
+}
+
+// Handle edit form submission
+document.getElementById('editAwardForm').addEventListener('submit', function(e) {
+  const password = document.getElementById('editPasswordInput').value;
+  document.getElementById('editPassword').value = password;
+});
+
+// Close modal when clicking outside
+document.getElementById('editAwardModal').addEventListener('click', function(e) {
+  if (e.target === this) {
+    closeEditModal();
+  }
+});
+
+// Auto-hide admin sections after form submission
+document.addEventListener('DOMContentLoaded', function() {
+  // Check if there's a success message or redirect
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('added') === 'true') {
+    alert('Award added successfully!');
+  }
+});
+</script>
+
+{% endblock %}

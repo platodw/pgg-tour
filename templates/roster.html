@@ -1,0 +1,290 @@
+{% extends "base.html" %}
+
+{% block title %}Roster | PGG Tour{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+  <h1 class="text-3xl font-bold text-green-800">👥 PGG Tour Roster</h1>
+</div>
+
+<!-- Add New Player -->
+<div class="bg-white rounded-lg shadow-md p-6 mb-6">
+  <h2 class="text-xl font-semibold mb-4 text-green-700">➕ Add New Player</h2>
+
+  <form method="POST" action="/roster/add" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div>
+      <label class="block text-sm font-medium mb-1">Player Name *:</label>
+      <input type="text" name="name" required class="w-full border rounded p-2" placeholder="Enter player name">
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium mb-1">Email Address:</label>
+      <input type="email" name="email" class="w-full border rounded p-2" placeholder="player@example.com">
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium mb-1">Phone Number:</label>
+      <input type="tel" name="phone" class="w-full border rounded p-2" placeholder="(555) 123-4567">
+    </div>
+
+    <div class="flex items-end">
+      <button type="submit" class="w-full bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition">
+        Add Player
+      </button>
+    </div>
+  </form>
+</div>
+
+<!-- Player Roster -->
+<div class="bg-white rounded-lg shadow-md p-6">
+  <div class="flex justify-between items-center mb-4">
+    <h2 class="text-xl font-semibold">👥 Current Roster</h2>
+    <div class="text-sm text-gray-600">
+      Total: {{ players|selectattr('4')|list|length }} active, {{ players|rejectattr('4')|list|length }} inactive
+    </div>
+  </div>
+
+  {% if players %}
+    <div class="overflow-x-auto">
+      <table class="min-w-full table-auto border-collapse border border-gray-300 text-sm">
+        <thead class="bg-green-700 text-white">
+          <tr>
+            <th class="border border-gray-300 px-3 py-2 text-left">Status</th>
+            <th class="border border-gray-300 px-3 py-2 text-left">Player Name</th>
+            <th class="border border-gray-300 px-3 py-2 text-left">Email</th>
+            <th class="border border-gray-300 px-3 py-2 text-left">Phone</th>
+            <th class="border border-gray-300 px-3 py-2">Rounds</th>
+            <th class="border border-gray-300 px-3 py-2">Avg Score</th>
+            <th class="border border-gray-300 px-3 py-2">Wins</th>
+            <th class="border border-gray-300 px-3 py-2">Awards</th>
+            <th class="border border-gray-300 px-3 py-2">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for player_id, name, email, phone, active, created_date, total_rounds, avg_score, total_wins in players %}
+            <tr class="{% if active %}bg-white{% else %}bg-gray-100 opacity-60{% endif %} hover:bg-gray-50" id="player-{{ player_id }}">
+
+              <!-- Status -->
+              <td class="border border-gray-300 px-3 py-2">
+                {% if active %}
+                  <span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">Active</span>
+                {% else %}
+                  <span class="px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">Inactive</span>
+                {% endif %}
+              </td>
+
+              <!-- Player Name -->
+              <td class="border border-gray-300 px-3 py-2">
+                <div class="font-semibold {% if not active %}text-gray-500{% endif %}">{{ name }}</div>
+                <div class="text-xs text-gray-500">ID: {{ player_id }}</div>
+              </td>
+
+              <!-- Email -->
+              <td class="border border-gray-300 px-3 py-2">
+                {% if email %}
+                  <div class="text-sm">{{ email }}</div>
+                  <div class="text-xs text-green-600">✅ Can receive invites</div>
+                {% else %}
+                  <div class="text-xs text-red-600">❌ No email</div>
+                {% endif %}
+              </td>
+
+              <!-- Phone -->
+              <td class="border border-gray-300 px-3 py-2">
+                <div class="text-sm">{{ phone or '-' }}</div>
+              </td>
+
+              <!-- Rounds -->
+              <td class="border border-gray-300 px-3 py-2 text-center">
+                {{ total_rounds or 0 }}
+              </td>
+
+              <!-- Average Score -->
+              <td class="border border-gray-300 px-3 py-2 text-center">
+                {% if avg_score %}
+                  {{ "%.1f"|format(avg_score) }}
+                {% else %}
+                  -
+                {% endif %}
+              </td>
+
+              <!-- Wins -->
+              <td class="border border-gray-300 px-3 py-2 text-center">
+                {{ total_wins or 0 }}
+              </td>
+
+              <!-- Awards -->
+              <td class="border border-gray-300 px-3 py-2 text-center">
+                {% set award_count = awards_counts.get(name, 0) %}
+                {% if award_count > 0 %}
+                  <button onclick="toggleRosterAwards('{{ name }}')" class="text-blue-600 hover:text-blue-800 font-semibold">
+                    {{ award_count }} 🏆
+                  </button>
+                {% else %}
+                  <span class="text-gray-400">0</span>
+                {% endif %}
+              </td>
+
+              <!-- Actions -->
+              <td class="border border-gray-300 px-3 py-2">
+                <div class="flex space-x-1">
+                  <button onclick="editPlayer({{ player_id }}, '{{ name }}', '{{ email or '' }}', '{{ phone or '' }}', {{ active|lower }})"
+                          class="bg-blue-500 text-white px-2 py-1 rounded text-xs hover:bg-blue-600">
+                    Edit
+                  </button>
+
+                  {% if active %}
+                    <form method="POST" action="/roster/delete/{{ player_id }}" class="inline"
+                          onsubmit="return confirm('Deactivate {{ name }}? They will no longer appear in dropdowns but their scores will be preserved.')">
+                      <button type="submit" class="bg-red-500 text-white px-2 py-1 rounded text-xs hover:bg-red-600">
+                        Deactivate
+                      </button>
+                    </form>
+                  {% else %}
+                    <button onclick="reactivatePlayer({{ player_id }})"
+                            class="bg-green-500 text-white px-2 py-1 rounded text-xs hover:bg-green-600">
+                      Reactivate
+                    </button>
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
+
+            <!-- Awards Detail Row -->
+            {% if name in player_awards %}
+              <tr id="roster-awards-{{ name }}" class="hidden bg-blue-50">
+                <td colspan="9" class="border border-gray-300 px-3 py-2">
+                  <div class="text-sm">
+                    <strong class="text-blue-700">🏆 Awards for {{ name }}:</strong>
+                    <div class="mt-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
+                      {% for award in player_awards[name] %}
+                        <div class="bg-white border rounded p-2">
+                          <div class="font-semibold text-green-700 text-xs">{{ award.category }}</div>
+                          <div class="text-xs text-gray-600">{{ award.season }}</div>
+                          {% if award.description %}
+                            <div class="text-xs text-gray-500 mt-1">{{ award.description }}</div>
+                          {% endif %}
+                        </div>
+                      {% endfor %}
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            {% endif %}
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="text-center py-8 text-gray-500">
+      <p class="text-lg mb-2">👥 No players in roster</p>
+      <p class="text-sm">Add your first player using the form above!</p>
+    </div>
+  {% endif %}
+</div>
+
+<!-- Edit Player Modal -->
+<div id="editModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+  <div class="flex items-center justify-center min-h-screen p-4">
+    <div class="bg-white rounded-lg p-6 w-full max-w-md">
+      <h3 class="text-lg font-semibold mb-4">Edit Player</h3>
+
+      <form method="POST" action="/roster/update" id="editForm">
+        <input type="hidden" name="player_id" id="editPlayerId">
+
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium mb-1">Player Name:</label>
+            <input type="text" name="name" id="editName" required class="w-full border rounded p-2">
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium mb-1">Email Address:</label>
+            <input type="email" name="email" id="editEmail" class="w-full border rounded p-2">
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium mb-1">Phone Number:</label>
+            <input type="tel" name="phone" id="editPhone" class="w-full border rounded p-2">
+          </div>
+
+          <div>
+            <label class="flex items-center space-x-2">
+              <input type="checkbox" name="active" value="1" id="editActive" class="rounded">
+              <span class="text-sm font-medium">Active Player</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="flex space-x-3 mt-6">
+          <button type="submit" class="flex-1 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+            Save Changes
+          </button>
+          <button type="button" onclick="closeEditModal()" class="flex-1 bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">
+            Cancel
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+function editPlayer(id, name, email, phone, active) {
+  document.getElementById('editPlayerId').value = id;
+  document.getElementById('editName').value = name;
+  document.getElementById('editEmail').value = email;
+  document.getElementById('editPhone').value = phone;
+  document.getElementById('editActive').checked = active;
+
+  document.getElementById('editModal').classList.remove('hidden');
+}
+
+function closeEditModal() {
+  document.getElementById('editModal').classList.add('hidden');
+}
+
+function reactivatePlayer(playerId) {
+  if (confirm('Reactivate this player? They will appear in dropdowns again.')) {
+    // Create a form to reactivate
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/roster/update';
+
+    const fields = {
+      'player_id': playerId,
+      'name': document.querySelector(`#player-${playerId} td:nth-child(2) div`).textContent,
+      'active': '1'
+    };
+
+    Object.keys(fields).forEach(key => {
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = key;
+      input.value = fields[key];
+      form.appendChild(input);
+    });
+
+    document.body.appendChild(form);
+    form.submit();
+  }
+}
+
+// Close modal when clicking outside
+document.getElementById('editModal').addEventListener('click', function(e) {
+  if (e.target === this) {
+    closeEditModal();
+  }
+});
+
+function toggleRosterAwards(playerName) {
+  const row = document.getElementById('roster-awards-' + playerName);
+  if (row.classList.contains('hidden')) {
+    row.classList.remove('hidden');
+  } else {
+    row.classList.add('hidden');
+  }
+}
+</script>
+
+{% endblock %}

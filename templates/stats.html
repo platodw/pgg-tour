@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+
+{% block title %}Stats | PGG Tour{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+  <h1 class="text-3xl font-bold text-green-800">📊 PGG Tour Statistics</h1>
+</div>
+
+<!-- Filters -->
+<div class="bg-white rounded-lg shadow-md p-6 mb-6">
+  <h2 class="text-xl font-semibold mb-4">Filters</h2>
+  <form method="GET" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+
+    <!-- Season Filter -->
+    <div>
+      <label class="block text-sm font-medium mb-1">Season:</label>
+      <select name="season" class="w-full border rounded p-2">
+        <option value="">All Seasons</option>
+        {% for season in seasons %}
+          <option value="{{ season }}" {% if current_filters.season == season %}selected{% endif %}>
+            {{ season }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- Course Filter -->
+    <div>
+      <label class="block text-sm font-medium mb-1">Course:</label>
+      <select name="course" class="w-full border rounded p-2">
+        <option value="">All Courses</option>
+        {% for course in courses %}
+          <option value="{{ course }}" {% if current_filters.course == course %}selected{% endif %}>
+            {{ course }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- Player Filter -->
+    <div>
+      <label class="block text-sm font-medium mb-1">Player:</label>
+      <select name="player" class="w-full border rounded p-2">
+        <option value="">All Players</option>
+        {% for player in players %}
+          <option value="{{ player }}" {% if current_filters.player == player %}selected{% endif %}>
+            {{ player }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- Submit Button -->
+    <div class="flex items-end">
+      <button type="submit" class="w-full bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition">
+        Apply Filters
+      </button>
+    </div>
+  </form>
+</div>
+
+<!-- Player Statistics -->
+<div class="bg-white rounded-lg shadow-md p-6 mb-6">
+  <h2 class="text-xl font-semibold mb-4">Player Statistics</h2>
+
+  {% if player_stats %}
+    <div class="overflow-x-auto">
+      <table class="min-w-full table-auto border-collapse border border-gray-300 text-sm">
+        <thead class="bg-green-700 text-white">
+          <tr>
+            <th class="border border-gray-300 px-3 py-2 text-left">Player</th>
+            <th class="border border-gray-300 px-3 py-2">Rounds</th>
+            <th class="border border-gray-300 px-3 py-2">Avg Score</th>
+            <th class="border border-gray-300 px-3 py-2">Best</th>
+            <th class="border border-gray-300 px-3 py-2">Worst</th>
+            <th class="border border-gray-300 px-3 py-2">Wins</th>
+            <th class="border border-gray-300 px-3 py-2">Win %</th>
+            <th class="border border-gray-300 px-3 py-2">Seasons</th>
+            <th class="border border-gray-300 px-3 py-2">Awards</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for player_name, rounds, avg_score, best, worst, wins, courses_played, seasons_played in player_stats %}
+            <tr class="bg-white hover:bg-gray-50">
+              <td class="border border-gray-300 px-3 py-2 font-semibold">{{ player_name }}</td>
+              <td class="border border-gray-300 px-3 py-2 text-center">{{ rounds }}</td>
+              <td class="border border-gray-300 px-3 py-2 text-center">{{ "%.1f"|format(avg_score) }}</td>
+              <td class="border border-gray-300 px-3 py-2 text-center text-green-600 font-semibold">{{ best }}</td>
+              <td class="border border-gray-300 px-3 py-2 text-center text-red-600">{{ worst }}</td>
+              <td class="border border-gray-300 px-3 py-2 text-center">{{ wins }}</td>
+              <td class="border border-gray-300 px-3 py-2 text-center">
+                {% if rounds > 0 %}
+                  {{ "%.1f"|format((wins / rounds) * 100) }}%
+                {% else %}
+                  0.0%
+                {% endif %}
+              </td>
+              <td class="border border-gray-300 px-3 py-2 text-center">{{ seasons_played }}</td>
+              <td class="border border-gray-300 px-3 py-2 text-center">
+                {% set award_count = awards_counts.get(player_name, 0) %}
+                {% if award_count > 0 %}
+                  <button onclick="toggleAwards('{{ player_name }}')" class="text-blue-600 hover:text-blue-800 font-semibold">
+                    {{ award_count }} 🏆
+                  </button>
+                {% else %}
+                  <span class="text-gray-400">0</span>
+                {% endif %}
+              </td>
+            </tr>
+
+            <!-- Awards Detail Row -->
+            {% if player_name in player_awards %}
+              <tr id="awards-{{ player_name }}" class="hidden bg-blue-50">
+                <td colspan="8" class="border border-gray-300 px-3 py-2">
+                  <div class="text-sm">
+                    <strong class="text-blue-700">🏆 Awards for {{ player_name }}:</strong>
+                    <div class="mt-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                      {% for award in player_awards[player_name] %}
+                        <div class="bg-white border rounded p-2">
+                          <div class="font-semibold text-green-700">{{ award.category }}</div>
+                          <div class="text-xs text-gray-600">{{ award.season }}</div>
+                          {% if award.description %}
+                            <div class="text-xs text-gray-500 mt-1">{{ award.description }}</div>
+                          {% endif %}
+                        </div>
+                      {% endfor %}
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            {% endif %}
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p class="text-gray-500 text-center py-8">No statistics available for the selected filters.</p>
+  {% endif %}
+</div>
+
+<!-- Recent Rounds -->
+<div class="bg-white rounded-lg shadow-md p-6">
+  <h2 class="text-xl font-semibold mb-4">Recent Rounds</h2>
+
+  {% if recent_rounds %}
+    <div class="overflow-x-auto">
+      <table class="min-w-full table-auto border-collapse border border-gray-300 text-sm">
+        <thead class="bg-green-700 text-white">
+          <tr>
+            <th class="border border-gray-300 px-3 py-2 text-left">Date</th>
+            <th class="border border-gray-300 px-3 py-2 text-left">Course</th>
+            <th class="border border-gray-300 px-3 py-2">Nine</th>
+            <th class="border border-gray-300 px-3 py-2 text-left">Player</th>
+            <th class="border border-gray-300 px-3 py-2">Score</th>
+            <th class="border border-gray-300 px-3 py-2">Winner</th>
+            <th class="border border-gray-300 px-3 py-2 text-left">Season</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for date, course, nine, player_name, total, winner, season in recent_rounds %}
+            <tr class="bg-white hover:bg-gray-50 {% if winner == 'Yes' %}bg-yellow-50{% endif %}">
+              <td class="border border-gray-300 px-3 py-2">{{ date or 'N/A' }}</td>
+              <td class="border border-gray-300 px-3 py-2">{{ course or 'N/A' }}</td>
+              <td class="border border-gray-300 px-3 py-2 text-center">{{ nine or 'N/A' }}</td>
+              <td class="border border-gray-300 px-3 py-2 font-semibold">{{ player_name }}</td>
+              <td class="border border-gray-300 px-3 py-2 text-center font-semibold">{{ total }}</td>
+              <td class="border border-gray-300 px-3 py-2 text-center">
+                {% if winner == 'Yes' %}
+                  <span class="text-green-600 font-semibold">✓ Win</span>
+                {% else %}
+                  <span class="text-gray-400">-</span>
+                {% endif %}
+              </td>
+              <td class="border border-gray-300 px-3 py-2">{{ season or 'N/A' }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p class="text-gray-500 text-center py-8">No recent rounds available for the selected filters.</p>
+  {% endif %}
+</div>
+
+<!-- Clear Filters Button -->
+{% if current_filters.season or current_filters.course or current_filters.player %}
+<div class="mt-4 text-center">
+  <a href="/stats" class="inline-block bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 transition">
+    Clear All Filters
+  </a>
+</div>
+{% endif %}
+
+
+
+<script>
+function toggleAwards(playerName) {
+  const row = document.getElementById('awards-' + playerName);
+  if (row.classList.contains('hidden')) {
+    row.classList.remove('hidden');
+  } else {
+    row.classList.add('hidden');
+  }
+}
+</script>
+
+{% endblock %}

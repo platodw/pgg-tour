@@ -1,0 +1,299 @@
+{% extends "base.html" %}
+
+{% block title %}Scorecard | PGG Tour{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-4">
+  <h1 class="text-3xl font-bold text-green-800">📝 Enter Scores</h1>
+  <button type="button" onclick="openLiveScoreboard()" class="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 transition">
+    📺 Live Scoreboard
+  </button>
+</div>
+
+<form method="POST" class="space-y-6">
+
+  <!-- Course Selection -->
+  <div>
+    <label for="course-select" class="font-semibold">Select Course:</label>
+    <select id="course-select" name="course" class="border p-2 rounded w-full mt-1">
+      <option value="">-- Select Course --</option>
+      {% for course in courses %}
+        <option value="{{ course }}">{{ course }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <!-- Front/Back & Date -->
+  <div class="flex flex-wrap gap-6 items-center">
+    <div>
+      <label class="font-semibold">Front or Back:</label><br>
+      <label><input type="radio" name="nine" value="Front" checked class="mr-1">Front 9</label>
+      <label class="ml-4"><input type="radio" name="nine" value="Back" class="mr-1">Back 9</label>
+    </div>
+
+    <div>
+      <label class="font-semibold">Date:</label><br>
+      <input type="date" name="date" class="border rounded p-2">
+    </div>
+  </div>
+
+  <!-- Score Table -->
+  <div class="overflow-x-auto mt-6">
+    <table class="min-w-full table-auto border-collapse border border-gray-300 text-center" id="score-table">
+      <thead class="bg-green-700 text-white">
+        <tr>
+          <th class="border border-gray-300 px-2 py-1">Player Name</th>
+          <th class="border border-gray-300 px-2 py-1">Mulligan Used?</th>
+          {% for i in range(1, 10) %}
+            <th class="border border-gray-300 px-2 py-1">{{ i }}</th>
+          {% endfor %}
+          <th class="border border-gray-300 px-2 py-1">Total</th>
+          <th class="border border-gray-300 px-2 py-1">Winner?</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for i in range(1, 5) %}
+        <tr class="bg-white transition-all" data-player="{{ i }}">
+          <td class="border border-gray-300 px-2 py-1">
+            <select name="player_{{ i }}_name" class="w-full border rounded p-1 player-select">
+              <option value="">-- Select Player --</option>
+              {% for p in players %}
+                <option value="{{ p }}">{{ p }}</option>
+              {% endfor %}
+            </select>
+          </td>
+          <td class="border border-gray-300 px-2 py-1">
+            <select name="player_{{ i }}_mulligan" class="w-full border rounded p-1 text-center">
+              <option value="">--</option>
+              <option value="Yes">Yes</option>
+              <option value="No">No</option>
+            </select>
+          </td>
+          {% for j in range(1, 10) %}
+            <td class="border border-gray-300 px-2 py-1">
+              <input type="number" name="player_{{ i }}_hole_{{ j }}" class="w-full border rounded p-1 hole-input text-center" min="0" max="10">
+            </td>
+          {% endfor %}
+          <td class="border border-gray-300 px-2 py-1 font-semibold text-gray-800 total-cell">0</td>
+          <td class="border border-gray-300 px-2 py-1 font-semibold text-gray-800 winner-cell">No</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Submit Button -->
+  <div class="text-center mt-6 mb-4">
+    <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition">
+      Submit Scores
+    </button>
+  </div>
+
+  <!-- Scoring Summary -->
+  <div class="bg-green-100 border border-green-300 p-4 rounded-md text-sm max-w-4xl mx-auto">
+    <strong>Scoring</strong>
+    <ul class="list-disc list-inside space-y-1 mt-1">
+      <li>One "match" is one 9 hole competition</li>
+      <li>Each player plays 2 matches per outing</li>
+      <li>Points do not carry over hole to hole</li>
+      <li>Win a Hole = <strong>1 pt</strong> per team member</li>
+      <li>Win with Birdie = <strong>2 pts</strong> per team member</li>
+      <li>Win with Eagle = <strong>4 pts</strong> per team member</li>
+      <li>Chip-in (not HIO) = <strong>2 pts</strong> to individual</li>
+      <li>Hole in One = <strong>10 pts</strong> to individual</li>
+    </ul>
+    <p class="italic text-xs mt-2">
+      Ties in a match (outside playoff) = both players receive a "Win"
+    </p>
+  </div>
+</form>
+
+<!-- Scripts -->
+<script>
+$(document).ready(function () {
+  $('#course-select').select2({
+    width: '100%',
+    allowClear: false,
+    tags: false,
+    minimumResultsForSearch: 5
+  });
+
+  $('.player-select').select2({
+    width: '100%',
+    tags: false,
+    allowClear: false,
+    minimumResultsForSearch: 5
+  });
+
+  setTimeout(function() {
+    var inputs = document.querySelectorAll('.hole-input');
+    console.log('Found inputs: ' + inputs.length);
+
+    for (var i = 0; i < inputs.length; i++) {
+      inputs[i].addEventListener('input', function() {
+        updateTotals();
+      });
+    }
+
+    updateTotals();
+  }, 1000);
+});
+
+var liveScoreboardWindow = null;
+
+function updateTotals() {
+  var rows = document.querySelectorAll('tbody tr');
+  console.log('Updating totals for ' + rows.length + ' rows');
+
+  for (var i = 0; i < rows.length; i++) {
+    var row = rows[i];
+    var inputs = row.querySelectorAll('.hole-input');
+    var total = 0;
+
+    for (var j = 0; j < inputs.length; j++) {
+      var value = parseInt(inputs[j].value) || 0;
+      total += value;
+    }
+
+    var totalCell = row.querySelector('.total-cell');
+    if (totalCell) {
+      totalCell.textContent = total;
+      console.log('Row ' + (i + 1) + ' total: ' + total);
+    }
+  }
+
+  // Auto-update live scoreboard if it's open
+  updateLiveScoreboard();
+}
+
+
+
+function openLiveScoreboard() {
+  // Create compact popup window (1/6 of screen)
+  var screenWidth = window.screen.width;
+  var screenHeight = window.screen.height;
+  var width = Math.floor(screenWidth / 6);
+  var height = Math.floor(screenHeight / 2);
+  var left = screenWidth - width - 50;
+  var top = 50;
+
+  liveScoreboardWindow = window.open('', 'LiveScoreboard',
+    'width=' + width + ',height=' + height + ',left=' + left + ',top=' + top + ',scrollbars=no,resizable=yes');
+
+  if (!liveScoreboardWindow) {
+    alert('Popup blocked! Please allow popups for this site and try again.');
+    return;
+  }
+
+  updateLiveScoreboard();
+  liveScoreboardWindow.focus();
+}
+
+function updateLiveScoreboard() {
+  if (!liveScoreboardWindow || liveScoreboardWindow.closed) {
+    return;
+  }
+
+  var players = getActivePlayers();
+  var holesThrough = getHolesThrough();
+  var html = generateCompactScoreboardHTML(players, holesThrough);
+
+  liveScoreboardWindow.document.open();
+  liveScoreboardWindow.document.write(html);
+  liveScoreboardWindow.document.close();
+}
+
+function getActivePlayers() {
+  var players = [];
+  var rows = document.querySelectorAll('tbody tr');
+
+  for (var i = 0; i < rows.length; i++) {
+    var row = rows[i];
+    var playerSelect = row.querySelector('.player-select');
+    var totalCell = row.querySelector('.total-cell');
+
+    if (playerSelect && totalCell && playerSelect.value) {
+      var total = parseInt(totalCell.textContent) || 0;
+      players.push({
+        name: playerSelect.value,
+        total: total
+      });
+    }
+  }
+
+  // Sort by score (highest first - highest score wins)
+  players.sort(function(a, b) {
+    // Players with no score (0) go to the bottom
+    if (a.total === 0 && b.total === 0) return 0;
+    if (a.total === 0) return 1;  // a goes after b
+    if (b.total === 0) return -1; // b goes after a
+    // For actual scores, highest wins (descending order)
+    return b.total - a.total;
+  });
+
+  return players;
+}
+
+function getHolesThrough() {
+  var maxHole = 0;
+  var rows = document.querySelectorAll('tbody tr');
+
+  for (var i = 0; i < rows.length; i++) {
+    var row = rows[i];
+    var playerSelect = row.querySelector('.player-select');
+
+    if (playerSelect && playerSelect.value) {
+      var inputs = row.querySelectorAll('.hole-input');
+      for (var j = inputs.length - 1; j >= 0; j--) {
+        if (inputs[j].value && parseInt(inputs[j].value) > 0) {
+          maxHole = Math.max(maxHole, j + 1);
+          break;
+        }
+      }
+    }
+  }
+
+  return maxHole;
+}
+
+function generateCompactScoreboardHTML(players, holesThrough) {
+  var progressText = holesThrough === 0 ? 'Starting Soon' : 'Through ' + holesThrough + ' Hole' + (holesThrough === 1 ? '' : 's');
+
+  var playersHTML = '';
+  if (players.length > 0) {
+    for (var i = 0; i < players.length; i++) {
+      var player = players[i];
+      if (player.total > 0) {
+        var position = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i + 1);
+        var bgColor = i === 0 ? '#FFD700' : i === 1 ? '#C0C0C0' : i === 2 ? '#CD7F32' : '#4CAF50';
+
+        playersHTML += '<div style="background: ' + bgColor + '; color: black; padding: 8px; margin: 4px 0; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; font-size: 14px; font-weight: bold;">';
+        playersHTML += '<span>' + position + ' ' + player.name + '</span>';
+        playersHTML += '<span>' + player.total + '</span>';
+        playersHTML += '</div>';
+      }
+    }
+  }
+
+  if (playersHTML === '') {
+    playersHTML = '<div style="text-align: center; padding: 20px; color: #666;">No scores yet</div>';
+  }
+
+  return '<!DOCTYPE html>' +
+         '<html><head>' +
+         '<meta charset="UTF-8">' +
+         '<title>PGG Live</title>' +
+         '<style>body { font-family: Arial, sans-serif; margin: 0; padding: 8px; background: #f0f0f0; } .logo { width: 24px; height: 24px; border-radius: 50%; vertical-align: middle; margin-right: 6px; }</style>' +
+         '</head><body>' +
+         '<div style="background: #2E7D32; color: white; padding: 8px; text-align: center; border-radius: 6px; margin-bottom: 8px;">' +
+         '<div style="font-size: 16px; font-weight: bold; display: flex; align-items: center; justify-content: center;">' +
+         '<img src="/static/logo.jpg" alt="PGG Tour Logo" class="logo">' +
+         'PGG TOUR' +
+         '</div>' +
+         '<div style="font-size: 12px;">' + progressText + '</div>' +
+         '</div>' +
+         playersHTML +
+         '</body></html>';
+}
+</script>
+{% endblock %}

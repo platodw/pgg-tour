@@ -1,0 +1,261 @@
+{% extends "base.html" %}
+
+{% block title %}Home | PGG Tour{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="mb-6">
+  <h1 class="text-3xl font-bold text-green-800">🏠 PGG Tour Dashboard</h1>
+  <p class="text-gray-600">Welcome to the {{ season }}</p>
+</div>
+
+<!-- Live Match and Hole in One Section -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+
+  <!-- Live PGG Match -->
+  <div class="bg-gradient-to-r from-green-500 to-blue-600 text-white rounded-lg shadow-lg p-6">
+    <h2 class="text-2xl font-bold mb-4">🏌️ Live PGG Match</h2>
+
+    <div id="live-match-content">
+      <!-- This will be populated by JavaScript -->
+      <div class="text-center py-8">
+        <div class="text-4xl mb-3">⛳</div>
+        <p class="text-lg font-semibold">No PGG Match Being Played</p>
+        <p class="text-sm opacity-75 mt-2">Start entering scores to see live updates</p>
+        <a href="/scorecard" class="inline-block mt-3 bg-white bg-opacity-20 text-white px-4 py-2 rounded hover:bg-opacity-30 transition">
+          📝 Enter Scores
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hole in One Pot -->
+  <div class="bg-gradient-to-r from-yellow-500 to-orange-600 text-white rounded-lg shadow-lg p-6">
+    <h2 class="text-2xl font-bold mb-4">🕳️ Hole in One Pot</h2>
+
+    <div class="text-center">
+      <div class="text-6xl font-bold mb-2">${{ hole_in_one_pot|default(0)|round|int }}</div>
+      <p class="text-lg font-semibold mb-3">Current Pot Total</p>
+      <p class="text-sm opacity-75 mb-4">$1 per round played • $50 max per player</p>
+
+      <div class="bg-white bg-opacity-20 rounded-lg p-3 mb-4">
+        <div class="text-sm">
+          <div class="flex justify-between">
+            <span>Total Rounds Played:</span>
+            <span class="font-semibold">{{ total_rounds_played|default(0) }}</span>
+          </div>
+          <div class="flex justify-between mt-1">
+            <span>Pot Contributors:</span>
+            <span class="font-semibold">{{ unique_players|default(0) }} players</span>
+          </div>
+        </div>
+      </div>
+
+      <a href="/hole-in-one" class="inline-block bg-white bg-opacity-20 text-white px-4 py-2 rounded hover:bg-opacity-30 transition">
+        🏆 View Details
+      </a>
+    </div>
+  </div>
+
+</div>
+
+<!-- Dashboard Widgets -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+
+  <!-- Leaderboard Widget -->
+  <div class="bg-white rounded-lg shadow-md p-6">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-xl font-semibold">🏆 Current Leaderboard</h2>
+      <a href="/leaderboard" class="text-blue-600 hover:text-blue-800 text-sm">View Full →</a>
+    </div>
+
+    {% if leaderboard_widget %}
+      <div class="space-y-3">
+        {% for player, rounds, avg in leaderboard_widget %}
+          <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+            <div class="flex items-center space-x-3">
+              <div class="text-lg font-bold text-gray-600">
+                {% if loop.index == 1 %}
+                  🥇
+                {% elif loop.index == 2 %}
+                  🥈
+                {% elif loop.index == 3 %}
+                  🥉
+                {% else %}
+                  {{ loop.index }}
+                {% endif %}
+              </div>
+              <div>
+                <div class="font-semibold">{{ player }}</div>
+                <div class="text-sm text-gray-600">{{ rounds }} rounds</div>
+              </div>
+            </div>
+            <div class="text-right">
+              <div class="font-bold text-green-600">{{ "%.1f"|format(avg) }}</div>
+              <div class="text-xs text-gray-500">avg score</div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="text-center py-8 text-gray-500">
+        <div class="text-4xl mb-2">🏆</div>
+        <p>No scores recorded yet</p>
+        <a href="/scorecard" class="text-blue-600 hover:text-blue-800 text-sm">Enter first scores →</a>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Upcoming Events Widget -->
+  <div class="bg-white rounded-lg shadow-md p-6">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-xl font-semibold">📅 Upcoming Events</h2>
+      <a href="/schedule" class="text-blue-600 hover:text-blue-800 text-sm">View All →</a>
+    </div>
+
+    {% if upcoming_events_widget %}
+      <div class="space-y-3">
+        {% for event_date, event_time, course, description, participant_count in upcoming_events_widget %}
+          <div class="border border-gray-200 rounded-lg p-3 hover:bg-gray-50 transition">
+            <div class="font-semibold text-green-700 mb-1">
+              📅 {{ event_date }}
+              {% if event_time %}
+                at {{ event_time }}
+              {% endif %}
+            </div>
+            {% if course %}
+              <div class="text-sm text-gray-700 mb-1">
+                🏌️ {{ course }}
+              </div>
+            {% endif %}
+            {% if description %}
+              <div class="text-sm text-gray-600 mb-1">{{ description }}</div>
+            {% endif %}
+            <div class="text-xs text-gray-500">
+              👥 {{ participant_count }} players invited
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="text-center py-8 text-gray-500">
+        <div class="text-4xl mb-2">📅</div>
+        <p>No upcoming events</p>
+        <a href="/schedule" class="text-blue-600 hover:text-blue-800 text-sm">Schedule an event →</a>
+      </div>
+    {% endif %}
+  </div>
+
+</div>
+
+<!-- Recent Activity -->
+<div class="bg-white rounded-lg shadow-md p-6">
+  <div class="flex items-center justify-between mb-4">
+    <h2 class="text-xl font-semibold">📊 Recent Activity</h2>
+    <a href="/stats" class="text-blue-600 hover:text-blue-800 text-sm">View All Stats →</a>
+  </div>
+
+  {% if recent_activity %}
+    <div class="overflow-x-auto">
+      <table class="min-w-full table-auto border-collapse border border-gray-300 text-sm">
+        <thead class="bg-gray-100">
+          <tr>
+            <th class="border border-gray-300 px-3 py-2 text-left">Date</th>
+            <th class="border border-gray-300 px-3 py-2 text-left">Course</th>
+            <th class="border border-gray-300 px-3 py-2 text-left">Player</th>
+            <th class="border border-gray-300 px-3 py-2 text-center">Score</th>
+            <th class="border border-gray-300 px-3 py-2 text-center">Result</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for date, course, player, total, winner in recent_activity %}
+            <tr class="hover:bg-gray-50 {% if winner == 'Yes' %}bg-yellow-50{% endif %}">
+              <td class="border border-gray-300 px-3 py-2">{{ date }}</td>
+              <td class="border border-gray-300 px-3 py-2">{{ course }}</td>
+              <td class="border border-gray-300 px-3 py-2 font-semibold">{{ player }}</td>
+              <td class="border border-gray-300 px-3 py-2 text-center font-bold">{{ total }}</td>
+              <td class="border border-gray-300 px-3 py-2 text-center">
+                {% if winner == 'Yes' %}
+                  <span class="text-green-600 font-semibold">🏆 Won</span>
+                {% else %}
+                  <span class="text-gray-500">-</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="text-center py-8 text-gray-500">
+      <div class="text-4xl mb-2">📊</div>
+      <p>No recent activity</p>
+      <a href="/scorecard" class="text-blue-600 hover:text-blue-800 text-sm">Enter scores to get started →</a>
+    </div>
+  {% endif %}
+</div>
+
+
+
+<script>
+// Check for live match data and update the Live PGG Match section
+function checkForLiveMatch() {
+  // This would typically check if there's an active scorecard session
+  // For now, we'll check if there are any scores from today
+
+  fetch('/api/live-match-status')
+    .then(response => response.json())
+    .then(data => {
+      const liveMatchContent = document.getElementById('live-match-content');
+
+      if (data.hasLiveMatch) {
+        // Show live scoreboard data
+        liveMatchContent.innerHTML = `
+          <div class="text-center">
+            <div class="text-lg font-semibold mb-3">🏌️ Match in Progress</div>
+            <div class="text-sm opacity-75 mb-4">${data.progressText}</div>
+            <div class="space-y-2">
+              ${data.players.map((player, index) => {
+                const position = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : (index + 1);
+                return `
+                  <div class="flex justify-between items-center bg-white bg-opacity-20 rounded px-3 py-2">
+                    <span>${position} ${player.name}</span>
+                    <span class="font-bold">${player.total}</span>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+            <a href="/scorecard" class="inline-block mt-3 bg-white bg-opacity-20 text-white px-4 py-2 rounded hover:bg-opacity-30 transition">
+              📝 Continue Match
+            </a>
+          </div>
+        `;
+      } else {
+        // Show no match message
+        liveMatchContent.innerHTML = `
+          <div class="text-center py-8">
+            <div class="text-4xl mb-3">⛳</div>
+            <p class="text-lg font-semibold">No PGG Match Being Played</p>
+            <p class="text-sm opacity-75 mt-2">Start entering scores to see live updates</p>
+            <a href="/scorecard" class="inline-block mt-3 bg-white bg-opacity-20 text-white px-4 py-2 rounded hover:bg-opacity-30 transition">
+              📝 Enter Scores
+            </a>
+          </div>
+        `;
+      }
+    })
+    .catch(error => {
+      console.log('No live match API available, showing default message');
+    });
+}
+
+// Check for live match on page load
+document.addEventListener('DOMContentLoaded', function() {
+  checkForLiveMatch();
+
+  // Refresh every 30 seconds
+  setInterval(checkForLiveMatch, 30000);
+});
+</script>
+
+{% endblock %}

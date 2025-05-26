@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Golf League Score Tracker</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+  <div class="bg-white shadow-xl rounded-xl p-8 w-full max-w-3xl">
+    <h1 class="text-3xl font-bold mb-6 text-center text-green-700">Enter Golf Scores</h1>
+
+    <form method="POST" class="space-y-6">
+      <div>
+        <label class="block mb-1 font-medium">Course</label>
+        <select name="course" class="w-full border rounded p-2">
+          {% for course in courses %}
+            <option value="{{ course }}">{{ course }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <label class="font-medium">Nine:</label>
+        <label><input type="radio" name="nine" value="Front" checked> Front 9</label>
+        <label><input type="radio" name="nine" value="Back"> Back 9</label>
+      </div>
+
+      <div class="grid grid-cols-2 gap-6">
+        <div>
+          <h3 class="font-semibold text-lg text-green-700 mb-2">Team A Players</h3>
+          <input type="text" name="team_a" placeholder="Player 1" class="w-full border rounded p-2 mb-2">
+          <input type="text" name="team_a" placeholder="Player 2" class="w-full border rounded p-2">
+        </div>
+
+        <div>
+          <h3 class="font-semibold text-lg text-red-700 mb-2">Team B Players</h3>
+          <input type="text" name="team_b" placeholder="Player 3" class="w-full border rounded p-2 mb-2">
+          <input type="text" name="team_b" placeholder="Player 4" class="w-full border rounded p-2">
+        </div>
+      </div>
+
+      <div>
+        <h3 class="text-lg font-semibold mb-2">Enter Team Scores (1 score per hole)</h3>
+        <div class="grid grid-cols-2 gap-2">
+          {% for i in range(1, 10) %}
+            <label class="block">
+              Hole {{ i }}:
+              <input type="number" name="hole_{{ i }}" min="1" max="10" class="w-full border rounded p-2 mt-1">
+            </label>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="text-center">
+        <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition">
+          Submit Scores
+        </button>
+      </div>
+    </form>
+  </div>
+</body>
+</html>

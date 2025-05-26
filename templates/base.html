@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}PGG Tour{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+  <link rel="icon" type="image/x-icon" href="/static/favicon.ico" />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+    }
+  </style>
+</head>
+<body class="bg-gray-100">
+
+  <!-- Navigation -->
+  <nav class="bg-green-800 text-white px-6 py-4 shadow">
+    <div class="max-w-7xl mx-auto flex justify-between items-center">
+      <div class="flex items-center">
+        <img src="/static/logo.jpg" alt="PGG Tour Logo" class="w-10 h-10 rounded-full mr-3">
+        <span class="text-xl font-bold">PGG Tour</span>
+      </div>
+      <ul class="flex space-x-6 items-center text-sm">
+        <li><a href="/" class="flex items-center gap-1 hover:underline"><i data-lucide="home" class="w-4 h-4"></i>Home</a></li>
+        <li><a href="/scorecard" class="flex items-center gap-1 hover:underline"><i data-lucide="edit" class="w-4 h-4"></i>Scorecard</a></li>
+        <li><a href="/leaderboard" class="flex items-center gap-1 hover:underline"><i data-lucide="bar-chart-3" class="w-4 h-4"></i>Leaderboard</a></li>
+        <li><a href="/stats" class="flex items-center gap-1 hover:underline"><i data-lucide="activity" class="w-4 h-4"></i>Stats</a></li>
+        <li><a href="/schedule" class="flex items-center gap-1 hover:underline"><i data-lucide="calendar" class="w-4 h-4"></i>Schedule</a></li>
+        <li><a href="/roster" class="flex items-center gap-1 hover:underline"><i data-lucide="users" class="w-4 h-4"></i>Roster</a></li>
+        <li><a href="/hole-in-one" class="flex items-center gap-1 hover:underline"><i data-lucide="target" class="w-4 h-4"></i>Hole in One</a></li>
+        <li><a href="/awards" class="flex items-center gap-1 hover:underline"><i data-lucide="award" class="w-4 h-4"></i>Awards</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- Page Content -->
+  <main class="p-6 max-w-7xl mx-auto">
+    {% block content %}{% endblock %}
+  </main>
+
+  <script>
+    lucide.createIcons();
+  </script>
+</body>
+</html>
