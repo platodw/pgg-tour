@@ -223,9 +223,13 @@ def home():
 def live_match_status():
     """API endpoint to check if there's a live match in progress"""
 
+    print(f"🔍 Checking live match status...")
+    print(f"   - Active scorecard: {session.get('active_scorecard')}")
+
     # First check if there's an active scorecard session
     if session.get('active_scorecard'):
         scorecard_data = session.get('scorecard_data', {})
+        print(f"   - Scorecard data: {len(scorecard_data.get('players', []))} players")
 
         if scorecard_data.get('players'):
             # Build live data from session
@@ -331,6 +335,11 @@ def update_live_scorecard():
     try:
         data = request.get_json()
 
+        # Debug logging
+        print(f"📱 Live scorecard update received: {len(data.get('players', []))} players")
+        for player in data.get('players', []):
+            print(f"   - {player.get('name', 'Unknown')}: {player.get('total', 0)} points")
+
         # Mark that there's an active scorecard session
         session['active_scorecard'] = True
         session['scorecard_data'] = {
@@ -340,9 +349,12 @@ def update_live_scorecard():
             'last_updated': datetime.now().isoformat()
         }
 
-        return jsonify({'success': True})
+        print(f"✅ Session updated - active_scorecard: {session.get('active_scorecard')}")
+
+        return jsonify({'success': True, 'debug': f"Updated {len(data.get('players', []))} players"})
 
     except Exception as e:
+        print(f"❌ Error updating live scorecard: {e}")
         return jsonify({'success': False, 'error': str(e)})
 
 @app.route("/scorecard", methods=["GET", "POST"])

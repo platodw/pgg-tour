@@ -251,34 +251,43 @@ function updateTotals() {
 }
 
 function updateLiveScorecard(playersData) {
-  // Only send if we have active players
-  if (playersData.length > 0) {
-    var courseSelect = document.getElementById('course-select');
-    var nineRadio = document.querySelector('input[name="nine"]:checked');
+  console.log('🔍 updateLiveScorecard called with:', playersData.length, 'players');
 
-    var data = {
-      players: playersData,
-      course: courseSelect ? courseSelect.value : '',
-      nine: nineRadio ? nineRadio.value : 'Front'
-    };
+  // Debug: Show what players we found
+  playersData.forEach((player, index) => {
+    console.log(`   Player ${index + 1}: ${player.name} - ${player.total} points`);
+  });
 
-    fetch('/api/update-live-scorecard', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data)
-    })
-    .then(response => response.json())
-    .then(data => {
-      if (data.success) {
-        console.log('✅ Live scorecard updated');
-      }
-    })
-    .catch(error => {
-      console.log('⚠️ Error updating live scorecard:', error);
-    });
-  }
+  // Send data even if no players selected (to clear live status)
+  var courseSelect = document.getElementById('course-select');
+  var nineRadio = document.querySelector('input[name="nine"]:checked');
+
+  var data = {
+    players: playersData,
+    course: courseSelect ? courseSelect.value : '',
+    nine: nineRadio ? nineRadio.value : 'Front'
+  };
+
+  console.log('📡 Sending live scorecard data:', data);
+
+  fetch('/api/update-live-scorecard', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data)
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      console.log('✅ Live scorecard updated:', data.debug || 'Success');
+    } else {
+      console.log('❌ Live scorecard update failed:', data.error);
+    }
+  })
+  .catch(error => {
+    console.log('⚠️ Error updating live scorecard:', error);
+  });
 }
 
 
