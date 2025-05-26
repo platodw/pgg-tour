@@ -357,6 +357,17 @@ def update_live_scorecard():
         print(f"❌ Error updating live scorecard: {e}")
         return jsonify({'success': False, 'error': str(e)})
 
+@app.route("/api/debug-session")
+@require_auth
+def debug_session():
+    """Debug endpoint to check session data"""
+    return jsonify({
+        'active_scorecard': session.get('active_scorecard', False),
+        'has_scorecard_data': bool(session.get('scorecard_data')),
+        'player_count': len(session.get('scorecard_data', {}).get('players', [])),
+        'session_keys': list(session.keys())
+    })
+
 @app.route("/scorecard", methods=["GET", "POST"])
 @require_auth
 def scorecard():

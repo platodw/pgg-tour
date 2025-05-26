@@ -205,15 +205,29 @@
 <script>
 // Check for live match data and update the Live PGG Match section
 function checkForLiveMatch() {
-  // This would typically check if there's an active scorecard session
-  // For now, we'll check if there are any scores from today
+  console.log('🔄 Checking for live match...');
+  const liveMatchContent = document.getElementById('live-match-content');
+
+  // Show loading state
+  liveMatchContent.innerHTML = `
+    <div class="text-center py-4">
+      <div class="text-sm opacity-75">🔄 Checking for live matches...</div>
+    </div>
+  `;
 
   fetch('/api/live-match-status')
-    .then(response => response.json())
+    .then(response => {
+      console.log('📡 API Response status:', response.status);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      return response.json();
+    })
     .then(data => {
-      const liveMatchContent = document.getElementById('live-match-content');
+      console.log('📊 Live match data:', data);
 
       if (data.hasLiveMatch) {
+        console.log('✅ Live match found!');
         // Show live scoreboard data
         const liveIndicator = data.isLive ? '<span class="inline-block w-2 h-2 bg-red-500 rounded-full animate-pulse mr-2"></span>LIVE' : '';
 
@@ -239,6 +253,7 @@ function checkForLiveMatch() {
           </div>
         `;
       } else {
+        console.log('❌ No live match found');
         // Show no match message
         liveMatchContent.innerHTML = `
           <div class="text-center py-8">
@@ -253,7 +268,17 @@ function checkForLiveMatch() {
       }
     })
     .catch(error => {
-      console.log('No live match API available, showing default message');
+      console.error('❌ Error checking live match:', error);
+      liveMatchContent.innerHTML = `
+        <div class="text-center py-8">
+          <div class="text-4xl mb-3">⚠️</div>
+          <p class="text-lg font-semibold">Connection Error</p>
+          <p class="text-sm opacity-75 mt-2">Unable to check for live matches</p>
+          <button onclick="checkForLiveMatch()" class="inline-block mt-3 bg-white bg-opacity-20 text-white px-4 py-2 rounded hover:bg-opacity-30 transition">
+            🔄 Try Again
+          </button>
+        </div>
+      `;
     });
 }
 
