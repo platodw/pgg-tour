@@ -103,7 +103,6 @@
               <th class="border border-gray-300 px-3 py-2">{{ i }}</th>
             {% endfor %}
             <th class="border border-gray-300 px-3 py-2">Total</th>
-            <th class="border border-gray-300 px-3 py-2">Winner?</th>
           </tr>
         </thead>
         <tbody>
@@ -130,7 +129,6 @@
               </td>
             {% endfor %}
             <td class="border border-gray-300 px-3 py-2 font-semibold text-gray-800 total-cell">0</td>
-            <td class="border border-gray-300 px-3 py-2 font-semibold text-gray-800 winner-cell">No</td>
           </tr>
           {% endfor %}
         </tbody>
@@ -212,7 +210,9 @@ function updateTotals() {
   console.log('Updating totals for ' + rows.length + ' rows');
 
   var playersData = [];
+  var maxTotal = 0;
 
+  // First pass: Calculate totals
   for (var i = 0; i < rows.length; i++) {
     var row = rows[i];
     var inputs = row.querySelectorAll('.hole-input');
@@ -233,13 +233,32 @@ function updateTotals() {
       console.log('Row ' + (i + 1) + ' total: ' + total);
     }
 
-    // Collect player data for live updates
-    if (playerSelect && playerSelect.value) {
+    // Track max total for winner highlighting
+    if (playerSelect && playerSelect.value && total > 0) {
+      maxTotal = Math.max(maxTotal, total);
       playersData.push({
         name: playerSelect.value,
         total: total,
-        holes: holes
+        holes: holes,
+        row: row
       });
+    }
+  }
+
+  // Second pass: Highlight winners (highest score)
+  for (var i = 0; i < playersData.length; i++) {
+    var playerData = playersData[i];
+    var row = playerData.row;
+
+    // Remove existing winner styling
+    row.classList.remove('bg-yellow-100', 'bg-green-100');
+
+    // Add winner styling if this player has the highest score
+    if (playerData.total === maxTotal && maxTotal > 0) {
+      row.classList.add('bg-yellow-100'); // Highlight winner(s) in yellow
+      console.log('🏆 Winner: ' + playerData.name + ' with ' + playerData.total + ' points');
+    } else {
+      row.classList.add('bg-white'); // Normal background
     }
   }
 

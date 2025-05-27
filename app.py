@@ -384,19 +384,35 @@ def scorecard():
         conn = sqlite3.connect("golf_scores.db")
         c = conn.cursor()
 
+        # First pass: Collect all player data
+        players_data = []
         for i in range(1, 5):  # Loop through each player
             name = request.form.get(f"player_{i}_name")
             mulligan = request.form.get(f"player_{i}_mulligan")
-            winner = request.form.get(f"player_{i}_winner") or "No"
 
-            # Gather scores for each hole
-            holes = []
-            total = 0
-            for j in range(1, 10):
-                val = request.form.get(f"player_{i}_hole_{j}")
-                score = int(val) if val else 0
-                holes.append(score)
-                total += score
+            if name:  # Only process if player name is provided
+                # Gather scores for each hole
+                holes = []
+                total = 0
+                for j in range(1, 10):
+                    val = request.form.get(f"player_{i}_hole_{j}")
+                    score = int(val) if val else 0
+                    holes.append(score)
+                    total += score
+
+                players_data.append({
+                    'name': name,
+                    'mulligan': mulligan,
+                    'holes': holes,
+                    'total': total
+                })
+
+        # Determine winner(s) - highest score wins in PGG Tour
+        max_score = max([p['total'] for p in players_data]) if players_data else 0
+
+        # Second pass: Insert data with correct winner status
+        for player_data in players_data:
+            winner = "Yes" if player_data['total'] == max_score and max_score > 0 else "No"
 
             # Insert into database
             c.execute('''
@@ -405,14 +421,14 @@ def scorecard():
                     hole_1, hole_2, hole_3, hole_4, hole_5,
                     hole_6, hole_7, hole_8, hole_9,
                     total, winner, season
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (
-                date, course, nine, name, mulligan,
-                *holes, total, winner, season
+                date, course, nine, player_data['name'], player_data['mulligan'],
+                *player_data['holes'], player_data['total'], winner, season
             ))
 
             # Update hole-in-one pot for this player (+$1 per round)
-            update_hole_in_one_pot(name)
+            update_hole_in_one_pot(player_data['name'])
 
         conn.commit()
         conn.close()
