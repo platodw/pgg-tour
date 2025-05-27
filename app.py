@@ -372,6 +372,12 @@ def debug_session():
 @require_auth
 def scorecard():
     if request.method == "POST":
+        # Check admin password first
+        admin_password = request.form.get("admin_password", "").strip()
+        if admin_password != ADMIN_PASSWORD:
+            # Redirect back with error message
+            return redirect(url_for("scorecard") + "?error=invalid_password")
+
         date = request.form.get("date")
         if date:
             date_obj = datetime.strptime(date, "%Y-%m-%d")
@@ -446,7 +452,14 @@ def scorecard():
     with open("static/course_list.json") as f:
         courses = json.load(f)
 
-    return render_template("scorecard.html", courses=courses, players=players)
+    # Check for error messages
+    error_type = request.args.get('error')
+    error_message = None
+
+    if error_type == 'invalid_password':
+        error_message = "Invalid admin password. Please try again."
+
+    return render_template("scorecard.html", courses=courses, players=players, error_message=error_message)
 
 @app.route("/leaderboard")
 @require_auth
