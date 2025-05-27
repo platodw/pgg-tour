@@ -186,14 +186,8 @@ def home():
     """)
     upcoming_events_widget = c.fetchall()
 
-    # Get recent activity (last 5 rounds)
-    c.execute("""
-        SELECT date, course, player_name, total, winner
-        FROM scores
-        ORDER BY date DESC, id DESC
-        LIMIT 5
-    """)
-    recent_activity = c.fetchall()
+    # Get recent matches (last 2 complete matches)
+    recent_matches = get_recent_matches(c, limit=2)
 
     # Get hole in one pot data
     c.execute("SELECT SUM(amount_owed) FROM hole_in_one_pot")
@@ -213,7 +207,7 @@ def home():
                          season=current_season,
                          leaderboard_widget=leaderboard_widget,
                          upcoming_events_widget=upcoming_events_widget,
-                         recent_activity=recent_activity,
+                         recent_matches=recent_matches,
                          hole_in_one_pot=hole_in_one_pot,
                          total_rounds_played=total_rounds_played,
                          unique_players=unique_players)
@@ -1613,6 +1607,47 @@ def update_hole_in_one_pot(player_name):
 
     finally:
         conn.close()
+
+def get_recent_matches(cursor, limit=2):
+    """Get recent complete matches grouped by date, course, and nine"""
+
+    # Get distinct matches (date + course + nine combinations) with scores
+    cursor.execute("""
+        SELECT DISTINCT date, course, nine
+        FROM scores
+        WHERE date IS NOT NULL AND course IS NOT NULL AND nine IS NOT NULL
+        ORDER BY date DESC, course, nine DESC
+        LIMIT ?
+    """, (limit * 2,))  # Get more to ensure we have enough complete matches
+
+    match_combinations = cursor.fetchall()
+
+    recent_matches = []
+
+    for date, course, nine in match_combinations:
+        if len(recent_matches) >= limit:
+            break
+
+        # Get all players for this specific match
+        cursor.execute("""
+            SELECT player_name, total, winner
+            FROM scores
+            WHERE date = ? AND course = ? AND nine = ?
+            ORDER BY total DESC
+        """, (date, course, nine))
+
+        players = cursor.fetchall()
+
+        # Only include matches with at least 2 players
+        if len(players) >= 2:
+            recent_matches.append({
+                'date': date,
+                'course': course,
+                'nine': nine,
+                'players': players
+            })
+
+    return recent_matches
 
 if __name__ == "__main__":
     import os

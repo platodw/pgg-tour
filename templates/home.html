@@ -148,48 +148,53 @@
 
 </div>
 
-<!-- Recent Activity -->
+<!-- Recent Matches -->
 <div class="bg-white rounded-lg shadow-md p-6">
   <div class="flex items-center justify-between mb-4">
-    <h2 class="text-xl font-semibold">📊 Recent Activity</h2>
+    <h2 class="text-xl font-semibold">🏌️ Recent Matches</h2>
     <a href="/stats" class="text-blue-600 hover:text-blue-800 text-sm">View All Stats →</a>
   </div>
 
-  {% if recent_activity %}
-    <div class="overflow-x-auto">
-      <table class="min-w-full table-auto border-collapse border border-gray-300 text-sm">
-        <thead class="bg-gray-100">
-          <tr>
-            <th class="border border-gray-300 px-3 py-2 text-left">Date</th>
-            <th class="border border-gray-300 px-3 py-2 text-left">Course</th>
-            <th class="border border-gray-300 px-3 py-2 text-left">Player</th>
-            <th class="border border-gray-300 px-3 py-2 text-center">Score</th>
-            <th class="border border-gray-300 px-3 py-2 text-center">Result</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for date, course, player, total, winner in recent_activity %}
-            <tr class="hover:bg-gray-50 {% if winner == 'Yes' %}bg-yellow-50{% endif %}">
-              <td class="border border-gray-300 px-3 py-2">{{ date }}</td>
-              <td class="border border-gray-300 px-3 py-2">{{ course }}</td>
-              <td class="border border-gray-300 px-3 py-2 font-semibold">{{ player }}</td>
-              <td class="border border-gray-300 px-3 py-2 text-center font-bold">{{ total }}</td>
-              <td class="border border-gray-300 px-3 py-2 text-center">
-                {% if winner == 'Yes' %}
-                  <span class="text-green-600 font-semibold">🏆 Won</span>
-                {% else %}
-                  <span class="text-gray-500">-</span>
-                {% endif %}
-              </td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
+  {% if recent_matches %}
+    {% for match in recent_matches %}
+      <div class="mb-6 {% if not loop.last %}border-b border-gray-200 pb-4{% endif %}">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-semibold text-gray-800">📅 {{ match.date }} - {{ match.nine }} Nine</h3>
+          <span class="text-sm text-gray-600">{{ match.course }}</span>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="min-w-full table-auto border-collapse border border-gray-300 text-sm">
+            <thead class="bg-gray-100">
+              <tr>
+                <th class="border border-gray-300 px-3 py-2 text-left">Player</th>
+                <th class="border border-gray-300 px-3 py-2 text-center">Score</th>
+                <th class="border border-gray-300 px-3 py-2 text-center">Result</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for player_name, total, winner in match.players %}
+                <tr class="hover:bg-gray-50 {% if winner == 'Yes' %}bg-yellow-50{% endif %}">
+                  <td class="border border-gray-300 px-3 py-2 font-semibold">{{ player_name }}</td>
+                  <td class="border border-gray-300 px-3 py-2 text-center font-bold">{{ total }}</td>
+                  <td class="border border-gray-300 px-3 py-2 text-center">
+                    {% if winner == 'Yes' %}
+                      <span class="text-green-600 font-semibold">🏆 Won</span>
+                    {% else %}
+                      <span class="text-gray-500">-</span>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    {% endfor %}
   {% else %}
     <div class="text-center py-8 text-gray-500">
-      <div class="text-4xl mb-2">📊</div>
-      <p>No recent activity</p>
+      <div class="text-4xl mb-2">🏌️</div>
+      <p>No recent matches</p>
       <a href="/scorecard" class="text-blue-600 hover:text-blue-800 text-sm">Enter scores to get started →</a>
     </div>
   {% endif %}
