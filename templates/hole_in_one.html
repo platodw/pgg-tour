@@ -17,24 +17,22 @@
     <p class="text-lg opacity-90 mb-2">Current Hole-in-One Pot</p>
     <p class="text-sm opacity-75 mb-4">$1 per round played • $50 max per player • Winner takes all!</p>
 
-    <!-- Payment Notice and Links -->
+    <!-- Payment Instructions -->
     <div class="bg-white bg-opacity-20 rounded-lg p-4 mt-4">
       <p class="text-sm font-semibold mb-3">💡 Payment not due until Hole in One occurs</p>
-      <div class="flex justify-center space-x-2">
-        <a href="https://venmo.com/u/Dan-Plato"
-           target="_blank"
-           class="bg-blue-600 text-white px-3 py-2 rounded text-sm hover:bg-blue-700 transition">
-          💳 Venmo
-        </a>
-        <a href="https://paypal.me/platodw"
-           target="_blank"
-           class="bg-yellow-600 text-white px-3 py-2 rounded text-sm hover:bg-yellow-700 transition">
-          💰 PayPal
-        </a>
-        <button onclick="applePayRequest()"
-                class="bg-black text-white px-3 py-2 rounded text-sm hover:bg-gray-800 transition">
-          📱 Apple Pay
-        </button>
+      <div class="space-y-2 text-sm">
+        <div class="flex items-center justify-center space-x-2">
+          <div class="bg-blue-600 text-white px-3 py-1 rounded text-xs font-medium">💳 Venmo</div>
+          <span class="font-mono">@Dan-Plato</span>
+        </div>
+        <div class="flex items-center justify-center space-x-2">
+          <div class="bg-yellow-600 text-white px-3 py-1 rounded text-xs font-medium">💰 PayPal</div>
+          <span class="font-mono">platodw@gmail.com</span>
+        </div>
+        <div class="flex items-center justify-center space-x-2">
+          <div class="bg-black text-white px-3 py-1 rounded text-xs font-medium">📱 Apple Pay</div>
+          <span class="font-mono">216-832-7218</span>
+        </div>
       </div>
     </div>
   </div>
@@ -318,11 +316,7 @@ function togglePaidStatus(playerName) {
   }
 }
 
-function applePayRequest() {
-  // Apple Pay integration would require proper merchant setup
-  // For now, show an alert with instructions
-  alert(`Apple Pay integration requires merchant setup.\n\nPlease use Venmo or PayPal for now.`);
-}
+// Apple Pay function removed - now showing payment instructions instead
 
 // Initialize Select2 for course dropdown
 document.addEventListener('DOMContentLoaded', function() {
