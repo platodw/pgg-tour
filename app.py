@@ -984,7 +984,13 @@ def roster():
 
 @app.route("/roster/add", methods=["POST"])
 def add_player():
-    """Add a new player"""
+    """Add a new player (admin password protected)"""
+
+    # Check admin password first
+    admin_password = request.form.get("admin_password", "").strip()
+    if admin_password != ADMIN_PASSWORD:
+        # Redirect back with error message
+        return redirect(url_for("roster") + "?error=invalid_password")
 
     name = request.form.get("name", "").strip()
     email = request.form.get("email", "").strip()
