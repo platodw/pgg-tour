@@ -9,13 +9,7 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
-# Twilio SMS imports
-try:
-    from twilio.rest import Client
-    TWILIO_AVAILABLE = True
-except ImportError:
-    TWILIO_AVAILABLE = False
-    print("⚠️ Twilio not installed - SMS notifications disabled")
+# Twilio SMS functionality removed - manual texting preferred
 
 def get_season_label(date_obj):
     """
@@ -43,11 +37,6 @@ CLUBHOUSE_PASSWORD = 'restorativehealing'
 # Admin password for administrative functions
 ADMIN_PASSWORD = 'pgg2024'
 
-# Twilio Configuration (you'll need to set these up)
-TWILIO_ACCOUNT_SID = os.environ.get('TWILIO_ACCOUNT_SID', '')
-TWILIO_AUTH_TOKEN = os.environ.get('TWILIO_AUTH_TOKEN', '')
-TWILIO_PHONE_NUMBER = os.environ.get('TWILIO_PHONE_NUMBER', '')  # Your Twilio phone number
-
 # Authentication decorator
 def require_auth(f):
     """Decorator to require authentication for routes"""
@@ -58,56 +47,7 @@ def require_auth(f):
     decorated_function.__name__ = f.__name__
     return decorated_function
 
-def format_phone_number(phone):
-    """Format phone number for SMS (US format)"""
-    if not phone:
-        return None
-
-    # Remove all non-digit characters
-    digits = ''.join(filter(str.isdigit, phone))
-
-    # Handle different formats
-    if len(digits) == 10:
-        # Add US country code
-        return f"+1{digits}"
-    elif len(digits) == 11 and digits.startswith('1'):
-        # Already has country code
-        return f"+{digits}"
-    else:
-        # Invalid format
-        return None
-
-def send_sms_notification(phone_number, message):
-    """Send SMS notification using Twilio"""
-
-    if not TWILIO_AVAILABLE:
-        print("⚠️ Twilio not available - SMS not sent")
-        return False
-
-    if not all([TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER]):
-        print("⚠️ Twilio credentials not configured - SMS not sent")
-        return False
-
-    try:
-        client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
-
-        formatted_phone = format_phone_number(phone_number)
-        if not formatted_phone:
-            print(f"⚠️ Invalid phone number format: {phone_number}")
-            return False
-
-        message = client.messages.create(
-            body=message,
-            from_=TWILIO_PHONE_NUMBER,
-            to=formatted_phone
-        )
-
-        print(f"✅ SMS sent to {formatted_phone}: {message.sid}")
-        return True
-
-    except Exception as e:
-        print(f"❌ Error sending SMS to {phone_number}: {e}")
-        return False
+# SMS functionality removed - manual texting preferred
 
 # Force HTTPS in production
 @app.before_request
@@ -819,8 +759,21 @@ def create_event():
 
         conn.commit()
 
-        # Send SMS notifications
-        send_sms_invitations(event_id, selected_players, event_date, event_time, course, description)
+        # Event created successfully - admin can manually text players
+        print(f"✅ Event created successfully for {len(selected_players)} players")
+        print(f"📅 Event: {event_date} at {event_time}")
+        print(f"🏌️ Course: {course}")
+
+        # Get player names for logging
+        player_names = []
+        for player_id in selected_players:
+            c.execute("SELECT name FROM players WHERE id = ?", (player_id,))
+            result = c.fetchone()
+            if result:
+                player_names.append(result[0])
+
+        print(f"👥 Players: {', '.join(player_names)}")
+        print("📱 Admin should manually text players about the event")
 
     except Exception as e:
         print(f"Error creating event: {e}")
@@ -831,59 +784,7 @@ def create_event():
 
     return redirect(url_for("schedule"))
 
-def send_sms_invitations(event_id, player_ids, event_date, event_time, course, description):
-    """Send SMS invitations to selected players"""
-
-    conn = sqlite3.connect("golf_scores.db")
-    c = conn.cursor()
-
-    # Get player names and phone numbers
-    placeholders = ','.join('?' * len(player_ids))
-    c.execute(f"""
-        SELECT name, phone FROM players
-        WHERE id IN ({placeholders}) AND phone IS NOT NULL AND phone != ''
-    """, player_ids)
-
-    players = c.fetchall()
-    conn.close()
-
-    if not players:
-        print("⚠️ No players with phone numbers found")
-        return
-
-    # Format the event details
-    event_datetime = f"{event_date}"
-    if event_time:
-        # Convert 24-hour time to 12-hour format
-        try:
-            time_obj = datetime.strptime(event_time, '%H:%M')
-            formatted_time = time_obj.strftime('%I:%M %p')
-            event_datetime += f" at {formatted_time}"
-        except:
-            event_datetime += f" at {event_time}"
-
-    # Create SMS message
-    message = f"""🏌️ PGG Tour Event Scheduled!
-
-📅 {event_datetime}
-🏌️ Course: {course}
-👥 Players: {', '.join([name for name, _ in players])}
-
-{description if description else 'Get ready for some golf!'}
-
-See you on the course!
-- PGG Tour"""
-
-    # Send SMS to each player
-    sent_count = 0
-    for name, phone in players:
-        if send_sms_notification(phone, message):
-            sent_count += 1
-            print(f"📱 SMS sent to {name} ({phone})")
-        else:
-            print(f"❌ Failed to send SMS to {name} ({phone})")
-
-    print(f"📱 SMS invitations sent: {sent_count}/{len(players)} successful")
+# SMS invitation functionality removed - manual texting preferred
 
 @app.route("/players/manage")
 def manage_players():
