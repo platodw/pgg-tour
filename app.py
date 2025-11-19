@@ -23,6 +23,26 @@ def get_season_label(date_obj):
     else:  # January through October
         return f"{date_obj.year} Season"
 
+def format_time_12hr(time_str):
+    """
+    Convert 24-hour time format (HH:MM) to 12-hour format with AM/PM.
+    Example: "19:00" -> "7:00 PM", "09:30" -> "9:30 AM"
+    """
+    if not time_str:
+        return ""
+    try:
+        # Parse 24-hour format
+        time_obj = datetime.strptime(time_str, '%H:%M')
+        # Convert to 12-hour format with AM/PM, remove leading zero from hour
+        formatted = time_obj.strftime('%I:%M %p')
+        # Remove leading zero from hour (e.g., "09:30 AM" -> "9:30 AM")
+        if formatted[0] == '0':
+            formatted = formatted[1:]
+        return formatted
+    except:
+        # If parsing fails, return original string
+        return time_str
+
 # Optional: Refresh the course list every time the app starts
 # subprocess.run(["python", "scrape_courses.py"])  # Commented out to avoid startup issues
 
@@ -688,14 +708,16 @@ def schedule():
     conn = sqlite3.connect("golf_scores.db")
     c = conn.cursor()
 
-    # Get upcoming events with participant counts
+    # Get upcoming events with participant counts and player names
     c.execute("""
         SELECT
             e.id, e.event_date, e.event_time, e.course, e.description,
             e.max_players, e.status,
-            COUNT(ep.player_id) as participant_count
+            COUNT(ep.player_id) as participant_count,
+            COALESCE(GROUP_CONCAT(p.name, ', '), '') as player_names
         FROM events e
         LEFT JOIN event_participants ep ON e.id = ep.event_id
+        LEFT JOIN players p ON ep.player_id = p.id
         WHERE e.event_date >= date('now')
         GROUP BY e.id
         ORDER BY e.event_date, e.event_time
@@ -718,6 +740,7 @@ def schedule():
                          players=players,
                          courses=courses,
                          datetime=datetime,
+                         format_time_12hr=format_time_12hr,
                          error_message=error_message)
 
 @app.route("/schedule/create", methods=["POST"])
