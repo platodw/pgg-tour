@@ -15,6 +15,9 @@ class PostgresCursor:
         """Execute query, converting SQLite syntax to Postgres syntax"""
         import re
         
+        # Store original query for checking if it's an INSERT
+        original_query = query
+        
         # Convert SQLite ? placeholders to Postgres %s placeholders
         if params is not None:
             query = query.replace('?', '%s')
@@ -28,24 +31,27 @@ class PostgresCursor:
         query = query.replace("date(\'now\')", 'CURRENT_DATE')
         
         # Handle INSERT queries to get last inserted ID for Postgres
-        # If it's an INSERT without RETURNING, add RETURNING id
-        if re.match(r'^\s*INSERT\s+INTO', query, re.IGNORECASE):
-            if 'RETURNING' not in query.upper():
-                # Try to extract table name and add RETURNING id
-                table_match = re.search(r'INSERT\s+INTO\s+(\w+)', query, re.IGNORECASE)
-                if table_match:
-                    # Add RETURNING id at the end
+        # Only add RETURNING for simple, single-line INSERT statements
+        is_insert = re.match(r'^\s*INSERT\s+INTO', query.strip(), re.IGNORECASE | re.MULTILINE)
+        if is_insert and 'RETURNING' not in query.upper():
+            # Only add RETURNING for simple single-line INSERTs (no SELECT, VALUES only)
+            if 'VALUES' in query.upper() and 'SELECT' not in query.upper():
+                # Check if it's a simple VALUES insert (single line or simple multi-line)
+                lines = query.strip().split('\n')
+                if len(lines) <= 3:  # Simple INSERT with VALUES on one or two lines
+                    # Add RETURNING id at the end, before semicolon if present
                     query = query.rstrip(';').rstrip() + ' RETURNING id'
         
         result = self._cursor.execute(query, params)
         
         # If INSERT with RETURNING, fetch the ID
-        if 'RETURNING' in query.upper():
+        if 'RETURNING' in query.upper() and is_insert:
             try:
                 row = self._cursor.fetchone()
                 if row:
                     self._last_inserted_id = row[0]
-            except:
+            except Exception:
+                # Some queries might not return a value
                 pass
         
         return result

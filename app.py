@@ -457,17 +457,22 @@ def leaderboard():
     conn = get_db()
     c = conn.cursor()
 
-    c.execute('''
-        SELECT player_name, COUNT(*) as rounds, AVG(total) as avg_score
-        FROM scores
-        WHERE season = ?
-        GROUP BY player_name
-        HAVING rounds >= 1
-        ORDER BY avg_score DESC
-    ''', (current_season,))
+    try:
+        c.execute('''
+            SELECT player_name, COUNT(*) as rounds, AVG(total) as avg_score
+            FROM scores
+            WHERE season = ?
+            GROUP BY player_name
+            HAVING rounds >= 1
+            ORDER BY avg_score DESC
+        ''', (current_season,))
 
-    leaderboard_data = c.fetchall()
-    conn.close()
+        leaderboard_data = c.fetchall()
+    except Exception as e:
+        print(f"⚠️ Error fetching leaderboard: {e}")
+        leaderboard_data = []
+    finally:
+        conn.close()
 
     # Step 3: Pass season into the template
     return render_template("leaderboard.html", leaderboard=leaderboard_data, season=current_season)
@@ -486,14 +491,26 @@ def stats():
     player_filter = request.args.get('player', '')
 
     # Get all unique values for dropdowns
-    c.execute("SELECT DISTINCT season FROM scores WHERE season IS NOT NULL ORDER BY season DESC")
-    seasons = [row[0] for row in c.fetchall()]
+    try:
+        c.execute("SELECT DISTINCT season FROM scores WHERE season IS NOT NULL ORDER BY season DESC")
+        seasons = [row[0] for row in c.fetchall()]
+    except Exception as e:
+        print(f"⚠️ Error fetching seasons: {e}")
+        seasons = []
 
-    c.execute("SELECT DISTINCT course FROM scores WHERE course IS NOT NULL AND course != '' ORDER BY course")
-    courses = [row[0] for row in c.fetchall()]
+    try:
+        c.execute("SELECT DISTINCT course FROM scores WHERE course IS NOT NULL AND course != '' ORDER BY course")
+        courses = [row[0] for row in c.fetchall()]
+    except Exception as e:
+        print(f"⚠️ Error fetching courses: {e}")
+        courses = []
 
-    c.execute("SELECT DISTINCT player_name FROM scores WHERE player_name IS NOT NULL AND player_name != '' ORDER BY player_name")
-    players = [row[0] for row in c.fetchall()]
+    try:
+        c.execute("SELECT DISTINCT player_name FROM scores WHERE player_name IS NOT NULL AND player_name != '' ORDER BY player_name")
+        players = [row[0] for row in c.fetchall()]
+    except Exception as e:
+        print(f"⚠️ Error fetching players: {e}")
+        players = []
 
     # Build WHERE clause based on filters
     where_conditions = []
@@ -530,8 +547,12 @@ def stats():
         ORDER BY s.player_name
     """
 
-    c.execute(player_stats_query, params)
-    player_stats = c.fetchall()
+    try:
+        c.execute(player_stats_query, params)
+        player_stats = c.fetchall()
+    except Exception as e:
+        print(f"⚠️ Error fetching player stats: {e}")
+        player_stats = []
 
     # Get awards count for each player separately
     awards_count_query = f"""
@@ -543,8 +564,12 @@ def stats():
         GROUP BY a.player_name
     """
 
-    c.execute(awards_count_query, params)
-    awards_counts = dict(c.fetchall())
+    try:
+        c.execute(awards_count_query, params)
+        awards_counts = dict(c.fetchall())
+    except Exception as e:
+        print(f"⚠️ Error fetching awards count: {e}")
+        awards_counts = {}
 
     # Get detailed awards for each player (for the filtered data)
     awards_query = f"""
@@ -556,8 +581,12 @@ def stats():
         ORDER BY a.player_name, a.season DESC, a.award_category
     """
 
-    c.execute(awards_query, params)
-    awards_data = c.fetchall()
+    try:
+        c.execute(awards_query, params)
+        awards_data = c.fetchall()
+    except Exception as e:
+        print(f"⚠️ Error fetching awards: {e}")
+        awards_data = []
 
     # Group awards by player
     player_awards = {}
