@@ -32,13 +32,23 @@ def setup_awards_table():
         
         # Insert sample data (will be ignored if already exists)
         for award in sample_awards:
-            try:
-                c.execute('''
-                    INSERT INTO awards (season, award_category, player_name, description, award_date)
-                    VALUES (?, ?, ?, ?, ?)
-                ''', award)
-            except:
-                pass  # Ignore if already exists
+            season, award_category, player_name, description, award_date = award
+            # Check if this exact award already exists
+            c.execute('''
+                SELECT COUNT(*) FROM awards 
+                WHERE season = ? AND award_category = ? AND player_name = ?
+            ''', (season, award_category, player_name))
+            
+            exists = c.fetchone()[0] > 0
+            
+            if not exists:
+                try:
+                    c.execute('''
+                        INSERT INTO awards (season, award_category, player_name, description, award_date)
+                        VALUES (?, ?, ?, ?, ?)
+                    ''', award)
+                except Exception as e:
+                    print(f"⚠️ Warning: Could not insert sample award {award}: {e}")
         
         conn.commit()
         
