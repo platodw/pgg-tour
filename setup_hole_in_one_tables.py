@@ -94,12 +94,24 @@ def setup_hole_in_one_tables():
         
         print("✅ Hole-in-one tables created successfully")
         
+        # Commit table creation first
+        conn.commit()
+        
+        # Verify tables were created
+        try:
+            c.execute("SELECT COUNT(*) FROM hole_in_one_pot LIMIT 1")
+            c.fetchone()
+        except Exception as e:
+            print(f"⚠️ Warning: Could not verify hole_in_one_pot table exists: {e}")
+            print("   Tables may have been created but not accessible yet")
+        
         # Initialize pot balances for existing players
         initialize_player_pot_balances(c)
         
         # Calculate contributions for existing scores
         calculate_existing_contributions(c)
         
+        # Commit any data inserted
         conn.commit()
         
         # Show current pot status
@@ -184,6 +196,14 @@ def show_pot_status(cursor):
     """Display current pot status"""
     
     try:
+        # Check if table exists first (try to query it)
+        try:
+            cursor.execute("SELECT COUNT(*) FROM hole_in_one_pot LIMIT 1")
+            cursor.fetchone()
+        except Exception:
+            print("ℹ️ Hole-in-one pot table not accessible yet - skipping status display")
+            return
+        
         # Get total pot amount
         cursor.execute("SELECT SUM(amount_owed) FROM hole_in_one_pot")
         total_pot = cursor.fetchone()[0] or 0.0
@@ -201,18 +221,22 @@ def show_pot_status(cursor):
         print(f"🏆 Total Pot Amount: ${total_pot:.2f}")
         print(f"👥 Players Contributing: {len(balances)}")
         
-        print(f"\n📊 Player Balances:")
-        print("-" * 40)
-        for player, owed, contributed in balances:
-            print(f"{player:<20} | Owes: ${owed:.2f} | Paid: ${contributed:.2f}")
+        if balances:
+            print(f"\n📊 Player Balances:")
+            print("-" * 40)
+            for player, owed, contributed in balances:
+                print(f"{player:<20} | Owes: ${owed:.2f} | Paid: ${contributed:.2f}")
         
         # Check for hole-in-one history
-        cursor.execute("SELECT COUNT(*) FROM hole_in_one_history")
-        hole_in_one_count = cursor.fetchone()[0]
-        print(f"\n🕳️ Hole-in-Ones Recorded: {hole_in_one_count}")
+        try:
+            cursor.execute("SELECT COUNT(*) FROM hole_in_one_history")
+            hole_in_one_count = cursor.fetchone()[0]
+            print(f"\n🕳️ Hole-in-Ones Recorded: {hole_in_one_count}")
+        except Exception:
+            print(f"\n🕳️ Hole-in-One history table not accessible yet")
         
     except Exception as e:
-        print(f"❌ Error showing pot status: {e}")
+        print(f"⚠️ Could not show pot status: {e}")
 
 if __name__ == "__main__":
     print("🕳️ Setting up Hole-in-One tracking system...")
