@@ -41,4 +41,8 @@ Thumbs.db
 .env.local
 
 # Database (for development - production will use managed DB)
+golf_scores.db
 golf_scores.db.backup
+*.db
+*.sqlite
+*.sqlite3
