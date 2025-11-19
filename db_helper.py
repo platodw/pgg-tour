@@ -9,13 +9,60 @@ class PostgresCursor:
     """Wrapper for Postgres cursor to make it SQLite-compatible"""
     def __init__(self, cursor):
         self._cursor = cursor
+        self._last_inserted_id = None
     
     def execute(self, query, params=None):
-        """Execute query, converting ? placeholders to %s for Postgres"""
+        """Execute query, converting SQLite syntax to Postgres syntax"""
+        import re
+        
+        # Convert SQLite ? placeholders to Postgres %s placeholders
         if params is not None:
-            # Convert SQLite ? placeholders to Postgres %s placeholders
             query = query.replace('?', '%s')
-        return self._cursor.execute(query, params)
+        
+        # Convert SQLite-specific functions to Postgres equivalents
+        # GROUP_CONCAT -> STRING_AGG (syntax is compatible)
+        query = query.replace('GROUP_CONCAT', 'STRING_AGG')
+        
+        # date('now') -> CURRENT_DATE
+        query = query.replace("date('now')", 'CURRENT_DATE')
+        query = query.replace("date(\'now\')", 'CURRENT_DATE')
+        
+        # Handle INSERT queries to get last inserted ID for Postgres
+        # If it's an INSERT without RETURNING, add RETURNING id
+        if re.match(r'^\s*INSERT\s+INTO', query, re.IGNORECASE):
+            if 'RETURNING' not in query.upper():
+                # Try to extract table name and add RETURNING id
+                table_match = re.search(r'INSERT\s+INTO\s+(\w+)', query, re.IGNORECASE)
+                if table_match:
+                    # Add RETURNING id at the end
+                    query = query.rstrip(';').rstrip() + ' RETURNING id'
+        
+        result = self._cursor.execute(query, params)
+        
+        # If INSERT with RETURNING, fetch the ID
+        if 'RETURNING' in query.upper():
+            try:
+                row = self._cursor.fetchone()
+                if row:
+                    self._last_inserted_id = row[0]
+            except:
+                pass
+        
+        return result
+    
+    @property
+    def lastrowid(self):
+        """Return last inserted row ID for Postgres compatibility"""
+        # For Postgres, we need to check if we have a returning value
+        # The PostgresConnection wrapper stores it after INSERT
+        if hasattr(self, '_last_inserted_id'):
+            return self._last_inserted_id
+        return None
+    
+    @property
+    def rowcount(self):
+        """Return number of affected rows"""
+        return self._cursor.rowcount
     
     def fetchone(self):
         return self._cursor.fetchone()
@@ -34,10 +81,13 @@ class PostgresConnection:
     """Wrapper for Postgres connection to make it SQLite-compatible"""
     def __init__(self, conn):
         self._conn = conn
+        self._last_inserted_id = None
     
     def cursor(self):
         """Return a wrapped cursor that converts ? to %s automatically"""
-        return PostgresCursor(self._conn.cursor())
+        cursor = PostgresCursor(self._conn.cursor())
+        cursor._last_inserted_id = None  # Store last inserted ID
+        return cursor
     
     def commit(self):
         return self._conn.commit()

@@ -123,46 +123,73 @@ def home():
     c = conn.cursor()
 
     # Get leaderboard data (top 5) - highest scores first for PGG Tour
-    c.execute('''
-        SELECT player_name, COUNT(*) as rounds, AVG(total) as avg_score
-        FROM scores
-        WHERE season = ?
-        GROUP BY player_name
-        HAVING rounds >= 1
-        ORDER BY avg_score DESC
-        LIMIT 5
-    ''', (current_season,))
-    leaderboard_widget = c.fetchall()
+    try:
+        c.execute('''
+            SELECT player_name, COUNT(*) as rounds, AVG(total) as avg_score
+            FROM scores
+            WHERE season = ?
+            GROUP BY player_name
+            HAVING rounds >= 1
+            ORDER BY avg_score DESC
+            LIMIT 5
+        ''', (current_season,))
+        leaderboard_widget = c.fetchall()
+    except Exception as e:
+        print(f"⚠️ Error fetching leaderboard: {e}")
+        leaderboard_widget = []
 
     # Get upcoming events (next 3) with player names
-    c.execute("""
-        SELECT e.event_date, e.event_time, e.course, e.description,
-               COUNT(ep.player_id) as participant_count,
-               COALESCE(GROUP_CONCAT(p.name, ', '), '') as player_names
-        FROM events e
-        LEFT JOIN event_participants ep ON e.id = ep.event_id
-        LEFT JOIN players p ON ep.player_id = p.id
-        WHERE e.event_date >= date('now')
-        GROUP BY e.id
-        ORDER BY e.event_date, e.event_time
-        LIMIT 3
-    """)
-    upcoming_events_widget = c.fetchall()
+    try:
+        c.execute("""
+            SELECT e.event_date, e.event_time, e.course, e.description,
+                   COUNT(ep.player_id) as participant_count,
+                   COALESCE(STRING_AGG(p.name, ', '), '') as player_names
+            FROM events e
+            LEFT JOIN event_participants ep ON e.id = ep.event_id
+            LEFT JOIN players p ON ep.player_id = p.id
+            WHERE e.event_date >= CURRENT_DATE
+            GROUP BY e.id
+            ORDER BY e.event_date, e.event_time
+            LIMIT 3
+        """)
+        upcoming_events_widget = c.fetchall()
+    except Exception as e:
+        print(f"⚠️ Error fetching upcoming events: {e}")
+        upcoming_events_widget = []
 
     # Get recent matches (last 2 complete matches)
-    recent_matches = get_recent_matches(c, limit=2)
+    try:
+        recent_matches = get_recent_matches(c, limit=2)
+    except Exception as e:
+        print(f"⚠️ Error fetching recent matches: {e}")
+        recent_matches = []
 
     # Get hole in one pot data
-    c.execute("SELECT SUM(amount_owed) FROM hole_in_one_pot")
-    hole_in_one_pot = c.fetchone()[0] or 0
+    try:
+        c.execute("SELECT SUM(amount_owed) FROM hole_in_one_pot")
+        result = c.fetchone()
+        hole_in_one_pot = result[0] if result and result[0] else 0
+    except Exception as e:
+        print(f"⚠️ Error fetching hole-in-one pot: {e}")
+        hole_in_one_pot = 0
 
     # Get total rounds played (for pot calculation)
-    c.execute("SELECT COUNT(*) FROM scores")
-    total_rounds_played = c.fetchone()[0] or 0
+    try:
+        c.execute("SELECT COUNT(*) FROM scores")
+        result = c.fetchone()
+        total_rounds_played = result[0] if result and result[0] else 0
+    except Exception as e:
+        print(f"⚠️ Error fetching total rounds: {e}")
+        total_rounds_played = 0
 
     # Get unique players count
-    c.execute("SELECT COUNT(DISTINCT player_name) FROM scores")
-    unique_players = c.fetchone()[0] or 0
+    try:
+        c.execute("SELECT COUNT(DISTINCT player_name) FROM scores")
+        result = c.fetchone()
+        unique_players = result[0] if result and result[0] else 0
+    except Exception as e:
+        print(f"⚠️ Error fetching unique players: {e}")
+        unique_players = 0
 
     conn.close()
 
@@ -229,7 +256,6 @@ def live_match_status():
 
     # If no active session, check for submitted scores from today
     conn = get_db()
-    query = adapt_query("SELECT player_name, COUNT(*) as rounds, AVG(total) as avg_score FROM scores WHERE season = ? GROUP BY player_name HAVING rounds >= 1 ORDER BY avg_score DESC LIMIT 5")
     c = conn.cursor()
 
     today = datetime.today().strftime('%Y-%m-%d')
@@ -429,7 +455,6 @@ def leaderboard():
 
     # Step 2: Fetch only rows from that season
     conn = get_db()
-    query = adapt_query("SELECT player_name, COUNT(*) as rounds, AVG(total) as avg_score FROM scores WHERE season = ? GROUP BY player_name HAVING rounds >= 1 ORDER BY avg_score DESC LIMIT 5")
     c = conn.cursor()
 
     c.execute('''
@@ -453,7 +478,6 @@ def stats():
     """Stats page with filtering and comprehensive statistics"""
 
     conn = get_db()
-    query = adapt_query("SELECT player_name, COUNT(*) as rounds, AVG(total) as avg_score FROM scores WHERE season = ? GROUP BY player_name HAVING rounds >= 1 ORDER BY avg_score DESC LIMIT 5")
     c = conn.cursor()
 
     # Get filter parameters
@@ -592,7 +616,6 @@ def import_scores():
         return redirect(url_for("stats"))
 
     conn = get_db()
-    query = adapt_query("SELECT player_name, COUNT(*) as rounds, AVG(total) as avg_score FROM scores WHERE season = ? GROUP BY player_name HAVING rounds >= 1 ORDER BY avg_score DESC LIMIT 5")
     c = conn.cursor()
 
     imported_count = 0
@@ -712,7 +735,6 @@ def schedule():
         error_message = "Please fill in all required fields."
 
     conn = get_db()
-    query = adapt_query("SELECT player_name, COUNT(*) as rounds, AVG(total) as avg_score FROM scores WHERE season = ? GROUP BY player_name HAVING rounds >= 1 ORDER BY avg_score DESC LIMIT 5")
     c = conn.cursor()
 
     # Get upcoming events with participant counts and player names
@@ -721,11 +743,11 @@ def schedule():
             e.id, e.event_date, e.event_time, e.course, e.description,
             e.max_players, e.status,
             COUNT(ep.player_id) as participant_count,
-            COALESCE(GROUP_CONCAT(p.name, ', '), '') as player_names
+            COALESCE(STRING_AGG(p.name, ', '), '') as player_names
         FROM events e
         LEFT JOIN event_participants ep ON e.id = ep.event_id
         LEFT JOIN players p ON ep.player_id = p.id
-        WHERE e.event_date >= date('now')
+        WHERE e.event_date >= CURRENT_DATE
         GROUP BY e.id
         ORDER BY e.event_date, e.event_time
     """)
@@ -771,7 +793,6 @@ def create_event():
         return redirect(url_for("schedule") + "?error=missing_fields")
 
     conn = get_db()
-    query = adapt_query("SELECT player_name, COUNT(*) as rounds, AVG(total) as avg_score FROM scores WHERE season = ? GROUP BY player_name HAVING rounds >= 1 ORDER BY avg_score DESC LIMIT 5")
     c = conn.cursor()
 
     try:
@@ -824,7 +845,6 @@ def manage_players():
     """Player management page for editing emails and contact info"""
 
     conn = get_db()
-    query = adapt_query("SELECT player_name, COUNT(*) as rounds, AVG(total) as avg_score FROM scores WHERE season = ? GROUP BY player_name HAVING rounds >= 1 ORDER BY avg_score DESC LIMIT 5")
     c = conn.cursor()
 
     c.execute("SELECT id, name, email, phone, active FROM players ORDER BY name")
@@ -843,7 +863,6 @@ def update_player():
     phone = request.form.get("phone")
 
     conn = get_db()
-    query = adapt_query("SELECT player_name, COUNT(*) as rounds, AVG(total) as avg_score FROM scores WHERE season = ? GROUP BY player_name HAVING rounds >= 1 ORDER BY avg_score DESC LIMIT 5")
     c = conn.cursor()
 
     try:
@@ -869,7 +888,6 @@ def roster():
     """Roster management page"""
 
     conn = get_db()
-    query = adapt_query("SELECT player_name, COUNT(*) as rounds, AVG(total) as avg_score FROM scores WHERE season = ? GROUP BY player_name HAVING rounds >= 1 ORDER BY avg_score DESC LIMIT 5")
     c = conn.cursor()
 
     # Get all players with their stats (without awards to avoid duplication)
@@ -937,7 +955,6 @@ def add_player():
         return redirect(url_for("roster"))
 
     conn = get_db()
-    query = adapt_query("SELECT player_name, COUNT(*) as rounds, AVG(total) as avg_score FROM scores WHERE season = ? GROUP BY player_name HAVING rounds >= 1 ORDER BY avg_score DESC LIMIT 5")
     c = conn.cursor()
 
     try:
@@ -974,7 +991,6 @@ def update_roster_player():
         return redirect(url_for("roster"))
 
     conn = get_db()
-    query = adapt_query("SELECT player_name, COUNT(*) as rounds, AVG(total) as avg_score FROM scores WHERE season = ? GROUP BY player_name HAVING rounds >= 1 ORDER BY avg_score DESC LIMIT 5")
     c = conn.cursor()
 
     try:
@@ -1000,7 +1016,6 @@ def delete_player(player_id):
     """Deactivate a player (soft delete)"""
 
     conn = get_db()
-    query = adapt_query("SELECT player_name, COUNT(*) as rounds, AVG(total) as avg_score FROM scores WHERE season = ? GROUP BY player_name HAVING rounds >= 1 ORDER BY avg_score DESC LIMIT 5")
     c = conn.cursor()
 
     try:
@@ -1022,7 +1037,6 @@ def awards():
     """Awards page showing winners by season"""
 
     conn = get_db()
-    query = adapt_query("SELECT player_name, COUNT(*) as rounds, AVG(total) as avg_score FROM scores WHERE season = ? GROUP BY player_name HAVING rounds >= 1 ORDER BY avg_score DESC LIMIT 5")
     c = conn.cursor()
 
     # Get all awards grouped by season (include ID for editing)
@@ -1085,7 +1099,6 @@ def add_award():
         return redirect(url_for("awards"))
 
     conn = get_db()
-    query = adapt_query("SELECT player_name, COUNT(*) as rounds, AVG(total) as avg_score FROM scores WHERE season = ? GROUP BY player_name HAVING rounds >= 1 ORDER BY avg_score DESC LIMIT 5")
     c = conn.cursor()
 
     try:
@@ -1121,7 +1134,6 @@ def import_awards():
         return redirect(url_for("awards"))
 
     conn = get_db()
-    query = adapt_query("SELECT player_name, COUNT(*) as rounds, AVG(total) as avg_score FROM scores WHERE season = ? GROUP BY player_name HAVING rounds >= 1 ORDER BY avg_score DESC LIMIT 5")
     c = conn.cursor()
 
     imported_count = 0
@@ -1190,7 +1202,6 @@ def edit_award(award_id):
         return redirect(url_for("awards"))
 
     conn = get_db()
-    query = adapt_query("SELECT player_name, COUNT(*) as rounds, AVG(total) as avg_score FROM scores WHERE season = ? GROUP BY player_name HAVING rounds >= 1 ORDER BY avg_score DESC LIMIT 5")
     c = conn.cursor()
 
     try:
@@ -1222,7 +1233,6 @@ def delete_award(award_id):
         return redirect(url_for("awards"))
 
     conn = get_db()
-    query = adapt_query("SELECT player_name, COUNT(*) as rounds, AVG(total) as avg_score FROM scores WHERE season = ? GROUP BY player_name HAVING rounds >= 1 ORDER BY avg_score DESC LIMIT 5")
     c = conn.cursor()
 
     try:
@@ -1249,7 +1259,6 @@ def hole_in_one():
     """Hole-in-one pot tracking and history page"""
 
     conn = get_db()
-    query = adapt_query("SELECT player_name, COUNT(*) as rounds, AVG(total) as avg_score FROM scores WHERE season = ? GROUP BY player_name HAVING rounds >= 1 ORDER BY avg_score DESC LIMIT 5")
     c = conn.cursor()
 
     # Get current pot status
@@ -1308,7 +1317,6 @@ def record_hole_in_one():
         return redirect(url_for("hole_in_one"))
 
     conn = get_db()
-    query = adapt_query("SELECT player_name, COUNT(*) as rounds, AVG(total) as avg_score FROM scores WHERE season = ? GROUP BY player_name HAVING rounds >= 1 ORDER BY avg_score DESC LIMIT 5")
     c = conn.cursor()
 
     try:
@@ -1358,7 +1366,6 @@ def upload_hole_in_one_balances():
         return redirect(url_for("hole_in_one"))
 
     conn = get_db()
-    query = adapt_query("SELECT player_name, COUNT(*) as rounds, AVG(total) as avg_score FROM scores WHERE season = ? GROUP BY player_name HAVING rounds >= 1 ORDER BY avg_score DESC LIMIT 5")
     c = conn.cursor()
 
     updated_count = 0
@@ -1417,7 +1424,6 @@ def toggle_paid_status(player_name):
         return redirect(url_for("hole_in_one"))
 
     conn = get_db()
-    query = adapt_query("SELECT player_name, COUNT(*) as rounds, AVG(total) as avg_score FROM scores WHERE season = ? GROUP BY player_name HAVING rounds >= 1 ORDER BY avg_score DESC LIMIT 5")
     c = conn.cursor()
 
     try:
@@ -1483,7 +1489,6 @@ def record_hole_in_one_payment():
         return redirect(url_for("hole_in_one"))
 
     conn = get_db()
-    query = adapt_query("SELECT player_name, COUNT(*) as rounds, AVG(total) as avg_score FROM scores WHERE season = ? GROUP BY player_name HAVING rounds >= 1 ORDER BY avg_score DESC LIMIT 5")
     c = conn.cursor()
 
     try:
@@ -1526,7 +1531,6 @@ def update_hole_in_one_pot(player_name):
     """Update pot when a player plays a round (called from score entry)"""
 
     conn = get_db()
-    query = adapt_query("SELECT player_name, COUNT(*) as rounds, AVG(total) as avg_score FROM scores WHERE season = ? GROUP BY player_name HAVING rounds >= 1 ORDER BY avg_score DESC LIMIT 5")
     c = conn.cursor()
 
     try:
