@@ -23,32 +23,7 @@ def setup_awards_table():
         
         print("✅ Awards table created successfully")
         
-        # Add some sample award categories for reference
-        sample_awards = [
-            ("2024 Season", "Season Champion", "Sample Player", "Winner of the 2024 season", "2024-10-31"),
-            ("2024 Season", "Most Improved", "Sample Player 2", "Showed the most improvement", "2024-10-31"),
-            ("2023 Season", "Season Champion", "Sample Player 3", "Winner of the 2023 season", "2023-10-31"),
-        ]
-        
-        # Insert sample data (will be ignored if already exists)
-        for award in sample_awards:
-            season, award_category, player_name, description, award_date = award
-            # Check if this exact award already exists
-            c.execute('''
-                SELECT COUNT(*) FROM awards 
-                WHERE season = ? AND award_category = ? AND player_name = ?
-            ''', (season, award_category, player_name))
-            
-            exists = c.fetchone()[0] > 0
-            
-            if not exists:
-                try:
-                    c.execute('''
-                        INSERT INTO awards (season, award_category, player_name, description, award_date)
-                        VALUES (?, ?, ?, ?, ?)
-                    ''', award)
-                except Exception as e:
-                    print(f"⚠️ Warning: Could not insert sample award {award}: {e}")
+        # Note: Sample awards removed - awards should be added manually through the web interface
         
         conn.commit()
         
