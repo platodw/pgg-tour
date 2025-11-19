@@ -1028,7 +1028,7 @@ def add_award():
 
     # Simple password protection
     password = request.form.get("password", "")
-    if password != "pgg2024":  # Change this to your desired password
+    if password != ADMIN_PASSWORD:
         return redirect(url_for("awards"))
 
     season = request.form.get("season", "").strip()
@@ -1071,7 +1071,7 @@ def import_awards():
 
     # Simple password protection
     password = request.form.get("import_password", "")
-    if password != "pgg2024":  # Change this to your desired password
+    if password != ADMIN_PASSWORD:
         return redirect(url_for("awards"))
 
     awards_data = request.form.get("awards_data", "").strip()
@@ -1131,7 +1131,7 @@ def edit_award(award_id):
 
     # Simple password protection
     password = request.form.get("password", "")
-    if password != "pgg2024":  # Change this to your desired password
+    if password != ADMIN_PASSWORD:
         return redirect(url_for("awards"))
 
     season = request.form.get("season", "").strip()
@@ -1175,7 +1175,7 @@ def delete_award(award_id):
 
     # Simple password protection
     password = request.form.get("password", "")
-    if password != "pgg2024":  # Change this to your desired password
+    if password != ADMIN_PASSWORD:
         return redirect(url_for("awards"))
 
     conn = sqlite3.connect("golf_scores.db")
@@ -1250,7 +1250,7 @@ def record_hole_in_one():
 
     # Simple password protection
     password = request.form.get("password", "")
-    if password != "pgg2024":  # Change this to your desired password
+    if password != ADMIN_PASSWORD:
         return redirect(url_for("hole_in_one"))
 
     player_name = request.form.get("player_name", "").strip()
@@ -1303,7 +1303,7 @@ def upload_hole_in_one_balances():
 
     # Simple password protection
     password = request.form.get("password", "")
-    if password != "pgg2024":  # Change this to your desired password
+    if password != ADMIN_PASSWORD:
         return redirect(url_for("hole_in_one"))
 
     balances_data = request.form.get("balances_data", "").strip()
@@ -1366,7 +1366,7 @@ def toggle_paid_status(player_name):
 
     # Simple password protection
     password = request.form.get("password", "")
-    if password != "pgg2024":  # Change this to your desired password
+    if password != ADMIN_PASSWORD:
         return redirect(url_for("hole_in_one"))
 
     conn = sqlite3.connect("golf_scores.db")
@@ -1419,7 +1419,7 @@ def record_hole_in_one_payment():
 
     # Simple password protection
     password = request.form.get("password", "")
-    if password != "pgg2024":  # Change this to your desired password
+    if password != ADMIN_PASSWORD:
         return redirect(url_for("hole_in_one"))
 
     player_name = request.form.get("player_name", "").strip()
