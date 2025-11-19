@@ -4,7 +4,18 @@ This guide will help you migrate from SQLite to Heroku Postgres for production.
 
 ## Step 1: Add Heroku Postgres Addon
 
-Run this command in your terminal (or add via Heroku dashboard):
+### Option A: Using Heroku Dashboard (Recommended - No CLI needed)
+
+1. Go to [https://dashboard.heroku.com](https://dashboard.heroku.com) and log in
+2. Select your app from the dashboard
+3. Click on the **"Resources"** tab
+4. In the **"Add-ons"** section, search for "Heroku Postgres"
+5. Click on **"Heroku Postgres"** from the search results
+6. Select the **"Mini"** plan (free tier)
+7. Click **"Provision"** or **"Submit Order Form"**
+8. Heroku will automatically set the `DATABASE_URL` environment variable
+
+### Option B: Using Heroku CLI (if installed)
 
 ```bash
 heroku addons:create heroku-postgresql:mini
