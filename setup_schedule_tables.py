@@ -1,54 +1,95 @@
-import sqlite3
+from db_helper import get_db
 import os
 
 def setup_schedule_tables():
     """Create tables for players and scheduled events"""
     
-    conn = sqlite3.connect('golf_scores.db')
+    conn = get_db()
     c = conn.cursor()
     
+    # Check if we're using Postgres
+    using_postgres = os.environ.get('DATABASE_URL') is not None
+    
     try:
-        # Create players table
-        c.execute('''
-        CREATE TABLE IF NOT EXISTS players (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT UNIQUE NOT NULL,
-            email TEXT,
-            phone TEXT,
-            active BOOLEAN DEFAULT 1,
-            created_date TEXT DEFAULT CURRENT_TIMESTAMP
-        )
-        ''')
-        
-        # Create events table
-        c.execute('''
-        CREATE TABLE IF NOT EXISTS events (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            event_date TEXT NOT NULL,
-            event_time TEXT,
-            course TEXT,
-            description TEXT,
-            max_players INTEGER DEFAULT 4,
-            created_by TEXT,
-            created_date TEXT DEFAULT CURRENT_TIMESTAMP,
-            status TEXT DEFAULT 'scheduled'
-        )
-        ''')
-        
-        # Create event_participants table (many-to-many relationship)
-        c.execute('''
-        CREATE TABLE IF NOT EXISTS event_participants (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            event_id INTEGER,
-            player_id INTEGER,
-            status TEXT DEFAULT 'invited',
-            invited_date TEXT DEFAULT CURRENT_TIMESTAMP,
-            response_date TEXT,
-            FOREIGN KEY (event_id) REFERENCES events (id),
-            FOREIGN KEY (player_id) REFERENCES players (id),
-            UNIQUE(event_id, player_id)
-        )
-        ''')
+        # Create players table (compatible with both SQLite and Postgres)
+        if using_postgres:
+            c.execute('''
+            CREATE TABLE IF NOT EXISTS players (
+                id SERIAL PRIMARY KEY,
+                name TEXT UNIQUE NOT NULL,
+                email TEXT,
+                phone TEXT,
+                active BOOLEAN DEFAULT TRUE,
+                created_date TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+            ''')
+            
+            c.execute('''
+            CREATE TABLE IF NOT EXISTS events (
+                id SERIAL PRIMARY KEY,
+                event_date TEXT NOT NULL,
+                event_time TEXT,
+                course TEXT,
+                description TEXT,
+                max_players INTEGER DEFAULT 4,
+                created_by TEXT,
+                created_date TEXT DEFAULT CURRENT_TIMESTAMP,
+                status TEXT DEFAULT 'scheduled'
+            )
+            ''')
+            
+            c.execute('''
+            CREATE TABLE IF NOT EXISTS event_participants (
+                id SERIAL PRIMARY KEY,
+                event_id INTEGER,
+                player_id INTEGER,
+                status TEXT DEFAULT 'invited',
+                invited_date TEXT DEFAULT CURRENT_TIMESTAMP,
+                response_date TEXT,
+                FOREIGN KEY (event_id) REFERENCES events (id),
+                FOREIGN KEY (player_id) REFERENCES players (id),
+                UNIQUE(event_id, player_id)
+            )
+            ''')
+        else:
+            c.execute('''
+            CREATE TABLE IF NOT EXISTS players (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT UNIQUE NOT NULL,
+                email TEXT,
+                phone TEXT,
+                active BOOLEAN DEFAULT 1,
+                created_date TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+            ''')
+            
+            c.execute('''
+            CREATE TABLE IF NOT EXISTS events (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                event_date TEXT NOT NULL,
+                event_time TEXT,
+                course TEXT,
+                description TEXT,
+                max_players INTEGER DEFAULT 4,
+                created_by TEXT,
+                created_date TEXT DEFAULT CURRENT_TIMESTAMP,
+                status TEXT DEFAULT 'scheduled'
+            )
+            ''')
+            
+            c.execute('''
+            CREATE TABLE IF NOT EXISTS event_participants (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                event_id INTEGER,
+                player_id INTEGER,
+                status TEXT DEFAULT 'invited',
+                invited_date TEXT DEFAULT CURRENT_TIMESTAMP,
+                response_date TEXT,
+                FOREIGN KEY (event_id) REFERENCES events (id),
+                FOREIGN KEY (player_id) REFERENCES players (id),
+                UNIQUE(event_id, player_id)
+            )
+            ''')
         
         print("✅ Schedule tables created successfully")
         
@@ -78,10 +119,17 @@ def migrate_players_from_txt(cursor):
         migrated_count = 0
         for player_name in players:
             try:
-                cursor.execute('''
-                    INSERT OR IGNORE INTO players (name, email) 
-                    VALUES (?, ?)
-                ''', (player_name, None))
+                if using_postgres:
+                    cursor.execute('''
+                        INSERT INTO players (name, email) 
+                        VALUES (%s, %s)
+                        ON CONFLICT (name) DO NOTHING
+                    ''', (player_name, None))
+                else:
+                    cursor.execute('''
+                        INSERT OR IGNORE INTO players (name, email) 
+                        VALUES (?, ?)
+                    ''', (player_name, None))
                 
                 if cursor.rowcount > 0:
                     migrated_count += 1

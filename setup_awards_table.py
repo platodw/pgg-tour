@@ -1,25 +1,43 @@
-import sqlite3
+from db_helper import get_db
+import os
 
 def setup_awards_table():
     """Create awards table for storing award winners"""
     
-    conn = sqlite3.connect('golf_scores.db')
+    conn = get_db()
     c = conn.cursor()
     
+    # Check if we're using Postgres
+    using_postgres = os.environ.get('DATABASE_URL') is not None
+    
     try:
-        # Create awards table
-        c.execute('''
-        CREATE TABLE IF NOT EXISTS awards (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            season TEXT NOT NULL,
-            award_category TEXT NOT NULL,
-            player_name TEXT NOT NULL,
-            description TEXT,
-            award_date TEXT,
-            created_date TEXT DEFAULT CURRENT_TIMESTAMP,
-            created_by TEXT DEFAULT 'Admin'
-        )
-        ''')
+        # Create awards table (compatible with both SQLite and Postgres)
+        if using_postgres:
+            c.execute('''
+            CREATE TABLE IF NOT EXISTS awards (
+                id SERIAL PRIMARY KEY,
+                season TEXT NOT NULL,
+                award_category TEXT NOT NULL,
+                player_name TEXT NOT NULL,
+                description TEXT,
+                award_date TEXT,
+                created_date TEXT DEFAULT CURRENT_TIMESTAMP,
+                created_by TEXT DEFAULT 'Admin'
+            )
+            ''')
+        else:
+            c.execute('''
+            CREATE TABLE IF NOT EXISTS awards (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                season TEXT NOT NULL,
+                award_category TEXT NOT NULL,
+                player_name TEXT NOT NULL,
+                description TEXT,
+                award_date TEXT,
+                created_date TEXT DEFAULT CURRENT_TIMESTAMP,
+                created_by TEXT DEFAULT 'Admin'
+            )
+            ''')
         
         print("✅ Awards table created successfully")
         

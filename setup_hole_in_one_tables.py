@@ -1,52 +1,96 @@
-import sqlite3
+from db_helper import get_db
 from datetime import datetime
+import os
 
 def setup_hole_in_one_tables():
     """Create tables for hole-in-one pot tracking and history"""
     
-    conn = sqlite3.connect('golf_scores.db')
+    conn = get_db()
     c = conn.cursor()
     
+    # Check if we're using Postgres
+    using_postgres = os.environ.get('DATABASE_URL') is not None
+    
     try:
-        # Create hole_in_one_pot table to track player contributions
-        c.execute('''
-        CREATE TABLE IF NOT EXISTS hole_in_one_pot (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            player_name TEXT NOT NULL,
-            amount_owed REAL DEFAULT 0.0,
-            total_contributed REAL DEFAULT 0.0,
-            last_updated TEXT DEFAULT CURRENT_TIMESTAMP
-        )
-        ''')
-        
-        # Create hole_in_one_history table to track actual hole-in-ones
-        c.execute('''
-        CREATE TABLE IF NOT EXISTS hole_in_one_history (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            player_name TEXT NOT NULL,
-            course TEXT NOT NULL,
-            hole_number INTEGER NOT NULL,
-            event_date TEXT NOT NULL,
-            pot_amount REAL NOT NULL,
-            description TEXT,
-            recorded_date TEXT DEFAULT CURRENT_TIMESTAMP,
-            recorded_by TEXT DEFAULT 'Admin'
-        )
-        ''')
-        
-        # Create pot_contributions table to track individual contributions
-        c.execute('''
-        CREATE TABLE IF NOT EXISTS pot_contributions (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            player_name TEXT NOT NULL,
-            contribution_amount REAL NOT NULL,
-            contribution_date TEXT NOT NULL,
-            score_id INTEGER,
-            description TEXT,
-            created_date TEXT DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (score_id) REFERENCES scores (id)
-        )
-        ''')
+        # Create hole_in_one_pot table (compatible with both SQLite and Postgres)
+        if using_postgres:
+            c.execute('''
+            CREATE TABLE IF NOT EXISTS hole_in_one_pot (
+                id SERIAL PRIMARY KEY,
+                player_name TEXT NOT NULL,
+                amount_owed REAL DEFAULT 0.0,
+                total_contributed REAL DEFAULT 0.0,
+                paid BOOLEAN DEFAULT FALSE,
+                original_balance REAL DEFAULT 0.0,
+                last_updated TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+            ''')
+            
+            c.execute('''
+            CREATE TABLE IF NOT EXISTS hole_in_one_history (
+                id SERIAL PRIMARY KEY,
+                player_name TEXT NOT NULL,
+                course TEXT NOT NULL,
+                hole_number INTEGER NOT NULL,
+                event_date TEXT NOT NULL,
+                pot_amount REAL NOT NULL,
+                description TEXT,
+                recorded_date TEXT DEFAULT CURRENT_TIMESTAMP,
+                recorded_by TEXT DEFAULT 'Admin'
+            )
+            ''')
+            
+            # Only add foreign key if scores table exists
+            c.execute('''
+            CREATE TABLE IF NOT EXISTS pot_contributions (
+                id SERIAL PRIMARY KEY,
+                player_name TEXT NOT NULL,
+                contribution_amount REAL NOT NULL,
+                contribution_date TEXT NOT NULL,
+                score_id INTEGER,
+                description TEXT,
+                created_date TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+            ''')
+        else:
+            c.execute('''
+            CREATE TABLE IF NOT EXISTS hole_in_one_pot (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                player_name TEXT NOT NULL,
+                amount_owed REAL DEFAULT 0.0,
+                total_contributed REAL DEFAULT 0.0,
+                paid BOOLEAN DEFAULT 0,
+                original_balance REAL DEFAULT 0.0,
+                last_updated TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+            ''')
+            
+            c.execute('''
+            CREATE TABLE IF NOT EXISTS hole_in_one_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                player_name TEXT NOT NULL,
+                course TEXT NOT NULL,
+                hole_number INTEGER NOT NULL,
+                event_date TEXT NOT NULL,
+                pot_amount REAL NOT NULL,
+                description TEXT,
+                recorded_date TEXT DEFAULT CURRENT_TIMESTAMP,
+                recorded_by TEXT DEFAULT 'Admin'
+            )
+            ''')
+            
+            c.execute('''
+            CREATE TABLE IF NOT EXISTS pot_contributions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                player_name TEXT NOT NULL,
+                contribution_amount REAL NOT NULL,
+                contribution_date TEXT NOT NULL,
+                score_id INTEGER,
+                description TEXT,
+                created_date TEXT DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (score_id) REFERENCES scores (id)
+            )
+            ''')
         
         print("✅ Hole-in-one tables created successfully")
         
@@ -72,6 +116,14 @@ def initialize_player_pot_balances(cursor):
     """Initialize pot balances for all existing players"""
     
     try:
+        # Check if scores table exists first (try to query it)
+        try:
+            cursor.execute("SELECT DISTINCT player_name FROM scores WHERE player_name IS NOT NULL LIMIT 1")
+            cursor.fetchone()
+        except Exception:
+            print("ℹ️ Scores table doesn't exist yet - skipping pot balance initialization")
+            return
+        
         # Get all unique players from scores table
         cursor.execute("SELECT DISTINCT player_name FROM scores WHERE player_name IS NOT NULL")
         players = cursor.fetchall()
@@ -90,12 +142,20 @@ def initialize_player_pot_balances(cursor):
         print(f"✅ Initialized pot balances for {initialized_count} players")
         
     except Exception as e:
-        print(f"❌ Error initializing pot balances: {e}")
+        print(f"⚠️ Warning: Could not initialize pot balances: {e}")
 
 def calculate_existing_contributions(cursor):
     """Calculate contributions for existing scores"""
     
     try:
+        # Check if scores table exists first (try to query it)
+        try:
+            cursor.execute("SELECT COUNT(*) FROM scores LIMIT 1")
+            cursor.fetchone()
+        except Exception:
+            print("ℹ️ Scores table doesn't exist yet - skipping contribution calculation")
+            return
+        
         # Count rounds per player to calculate what they owe
         cursor.execute("""
             SELECT player_name, COUNT(*) as round_count
