@@ -94,7 +94,7 @@ def setup_schedule_tables():
         print("✅ Schedule tables created successfully")
         
         # Migrate existing players from players.txt
-        migrate_players_from_txt(c)
+        migrate_players_from_txt(c, using_postgres)
         
         conn.commit()
         
@@ -105,7 +105,7 @@ def setup_schedule_tables():
     finally:
         conn.close()
 
-def migrate_players_from_txt(cursor):
+def migrate_players_from_txt(cursor, using_postgres=False):
     """Migrate players from players.txt to the database"""
     
     if not os.path.exists('players.txt'):
