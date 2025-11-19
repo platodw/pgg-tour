@@ -5,6 +5,7 @@ import subprocess
 from flask import Flask, render_template, request, redirect, url_for, jsonify, session
 
 from datetime import datetime, timedelta
+from db_helper import get_db
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -118,7 +119,7 @@ def home():
     today = datetime.today()
     current_season = get_season_label(today)
 
-    conn = sqlite3.connect("golf_scores.db")
+    conn = get_db()
     c = conn.cursor()
 
     # Get leaderboard data (top 5) - highest scores first for PGG Tour
@@ -227,7 +228,8 @@ def live_match_status():
                 })
 
     # If no active session, check for submitted scores from today
-    conn = sqlite3.connect("golf_scores.db")
+    conn = get_db()
+    query = adapt_query("SELECT player_name, COUNT(*) as rounds, AVG(total) as avg_score FROM scores WHERE season = ? GROUP BY player_name HAVING rounds >= 1 ORDER BY avg_score DESC LIMIT 5")
     c = conn.cursor()
 
     today = datetime.today().strftime('%Y-%m-%d')
@@ -344,7 +346,7 @@ def scorecard():
         course = request.form.get("course")
         nine = request.form.get("nine")
 
-        conn = sqlite3.connect("golf_scores.db")
+        conn = get_db()
         c = conn.cursor()
 
         # First pass: Collect all player data
@@ -399,7 +401,7 @@ def scorecard():
         return redirect(url_for("scorecard"))
 
     # Load player names from database
-    conn_players = sqlite3.connect("golf_scores.db")
+    conn_players = get_db()
     c_players = conn_players.cursor()
     c_players.execute("SELECT name FROM players WHERE active = 1 ORDER BY name")
     players = [row[0] for row in c_players.fetchall()]
@@ -426,7 +428,8 @@ def leaderboard():
     current_season = get_season_label(today)
 
     # Step 2: Fetch only rows from that season
-    conn = sqlite3.connect("golf_scores.db")
+    conn = get_db()
+    query = adapt_query("SELECT player_name, COUNT(*) as rounds, AVG(total) as avg_score FROM scores WHERE season = ? GROUP BY player_name HAVING rounds >= 1 ORDER BY avg_score DESC LIMIT 5")
     c = conn.cursor()
 
     c.execute('''
@@ -449,7 +452,8 @@ def leaderboard():
 def stats():
     """Stats page with filtering and comprehensive statistics"""
 
-    conn = sqlite3.connect("golf_scores.db")
+    conn = get_db()
+    query = adapt_query("SELECT player_name, COUNT(*) as rounds, AVG(total) as avg_score FROM scores WHERE season = ? GROUP BY player_name HAVING rounds >= 1 ORDER BY avg_score DESC LIMIT 5")
     c = conn.cursor()
 
     # Get filter parameters
@@ -587,7 +591,8 @@ def import_scores():
     if not scores_data:
         return redirect(url_for("stats"))
 
-    conn = sqlite3.connect("golf_scores.db")
+    conn = get_db()
+    query = adapt_query("SELECT player_name, COUNT(*) as rounds, AVG(total) as avg_score FROM scores WHERE season = ? GROUP BY player_name HAVING rounds >= 1 ORDER BY avg_score DESC LIMIT 5")
     c = conn.cursor()
 
     imported_count = 0
@@ -706,7 +711,8 @@ def schedule():
     elif error_type == 'missing_fields':
         error_message = "Please fill in all required fields."
 
-    conn = sqlite3.connect("golf_scores.db")
+    conn = get_db()
+    query = adapt_query("SELECT player_name, COUNT(*) as rounds, AVG(total) as avg_score FROM scores WHERE season = ? GROUP BY player_name HAVING rounds >= 1 ORDER BY avg_score DESC LIMIT 5")
     c = conn.cursor()
 
     # Get upcoming events with participant counts and player names
@@ -764,7 +770,8 @@ def create_event():
     if not event_date or not selected_players:
         return redirect(url_for("schedule") + "?error=missing_fields")
 
-    conn = sqlite3.connect("golf_scores.db")
+    conn = get_db()
+    query = adapt_query("SELECT player_name, COUNT(*) as rounds, AVG(total) as avg_score FROM scores WHERE season = ? GROUP BY player_name HAVING rounds >= 1 ORDER BY avg_score DESC LIMIT 5")
     c = conn.cursor()
 
     try:
@@ -816,7 +823,8 @@ def create_event():
 def manage_players():
     """Player management page for editing emails and contact info"""
 
-    conn = sqlite3.connect("golf_scores.db")
+    conn = get_db()
+    query = adapt_query("SELECT player_name, COUNT(*) as rounds, AVG(total) as avg_score FROM scores WHERE season = ? GROUP BY player_name HAVING rounds >= 1 ORDER BY avg_score DESC LIMIT 5")
     c = conn.cursor()
 
     c.execute("SELECT id, name, email, phone, active FROM players ORDER BY name")
@@ -834,7 +842,8 @@ def update_player():
     email = request.form.get("email")
     phone = request.form.get("phone")
 
-    conn = sqlite3.connect("golf_scores.db")
+    conn = get_db()
+    query = adapt_query("SELECT player_name, COUNT(*) as rounds, AVG(total) as avg_score FROM scores WHERE season = ? GROUP BY player_name HAVING rounds >= 1 ORDER BY avg_score DESC LIMIT 5")
     c = conn.cursor()
 
     try:
@@ -859,7 +868,8 @@ def update_player():
 def roster():
     """Roster management page"""
 
-    conn = sqlite3.connect("golf_scores.db")
+    conn = get_db()
+    query = adapt_query("SELECT player_name, COUNT(*) as rounds, AVG(total) as avg_score FROM scores WHERE season = ? GROUP BY player_name HAVING rounds >= 1 ORDER BY avg_score DESC LIMIT 5")
     c = conn.cursor()
 
     # Get all players with their stats (without awards to avoid duplication)
@@ -926,7 +936,8 @@ def add_player():
     if not name:
         return redirect(url_for("roster"))
 
-    conn = sqlite3.connect("golf_scores.db")
+    conn = get_db()
+    query = adapt_query("SELECT player_name, COUNT(*) as rounds, AVG(total) as avg_score FROM scores WHERE season = ? GROUP BY player_name HAVING rounds >= 1 ORDER BY avg_score DESC LIMIT 5")
     c = conn.cursor()
 
     try:
@@ -962,7 +973,8 @@ def update_roster_player():
     if not player_id or not name:
         return redirect(url_for("roster"))
 
-    conn = sqlite3.connect("golf_scores.db")
+    conn = get_db()
+    query = adapt_query("SELECT player_name, COUNT(*) as rounds, AVG(total) as avg_score FROM scores WHERE season = ? GROUP BY player_name HAVING rounds >= 1 ORDER BY avg_score DESC LIMIT 5")
     c = conn.cursor()
 
     try:
@@ -987,7 +999,8 @@ def update_roster_player():
 def delete_player(player_id):
     """Deactivate a player (soft delete)"""
 
-    conn = sqlite3.connect("golf_scores.db")
+    conn = get_db()
+    query = adapt_query("SELECT player_name, COUNT(*) as rounds, AVG(total) as avg_score FROM scores WHERE season = ? GROUP BY player_name HAVING rounds >= 1 ORDER BY avg_score DESC LIMIT 5")
     c = conn.cursor()
 
     try:
@@ -1008,7 +1021,8 @@ def delete_player(player_id):
 def awards():
     """Awards page showing winners by season"""
 
-    conn = sqlite3.connect("golf_scores.db")
+    conn = get_db()
+    query = adapt_query("SELECT player_name, COUNT(*) as rounds, AVG(total) as avg_score FROM scores WHERE season = ? GROUP BY player_name HAVING rounds >= 1 ORDER BY avg_score DESC LIMIT 5")
     c = conn.cursor()
 
     # Get all awards grouped by season (include ID for editing)
@@ -1070,7 +1084,8 @@ def add_award():
     if not season or not final_category or not player_name:
         return redirect(url_for("awards"))
 
-    conn = sqlite3.connect("golf_scores.db")
+    conn = get_db()
+    query = adapt_query("SELECT player_name, COUNT(*) as rounds, AVG(total) as avg_score FROM scores WHERE season = ? GROUP BY player_name HAVING rounds >= 1 ORDER BY avg_score DESC LIMIT 5")
     c = conn.cursor()
 
     try:
@@ -1105,7 +1120,8 @@ def import_awards():
     if not awards_data:
         return redirect(url_for("awards"))
 
-    conn = sqlite3.connect("golf_scores.db")
+    conn = get_db()
+    query = adapt_query("SELECT player_name, COUNT(*) as rounds, AVG(total) as avg_score FROM scores WHERE season = ? GROUP BY player_name HAVING rounds >= 1 ORDER BY avg_score DESC LIMIT 5")
     c = conn.cursor()
 
     imported_count = 0
@@ -1173,7 +1189,8 @@ def edit_award(award_id):
     if not season or not final_category or not player_name:
         return redirect(url_for("awards"))
 
-    conn = sqlite3.connect("golf_scores.db")
+    conn = get_db()
+    query = adapt_query("SELECT player_name, COUNT(*) as rounds, AVG(total) as avg_score FROM scores WHERE season = ? GROUP BY player_name HAVING rounds >= 1 ORDER BY avg_score DESC LIMIT 5")
     c = conn.cursor()
 
     try:
@@ -1204,7 +1221,8 @@ def delete_award(award_id):
     if password != ADMIN_PASSWORD:
         return redirect(url_for("awards"))
 
-    conn = sqlite3.connect("golf_scores.db")
+    conn = get_db()
+    query = adapt_query("SELECT player_name, COUNT(*) as rounds, AVG(total) as avg_score FROM scores WHERE season = ? GROUP BY player_name HAVING rounds >= 1 ORDER BY avg_score DESC LIMIT 5")
     c = conn.cursor()
 
     try:
@@ -1230,7 +1248,8 @@ def delete_award(award_id):
 def hole_in_one():
     """Hole-in-one pot tracking and history page"""
 
-    conn = sqlite3.connect("golf_scores.db")
+    conn = get_db()
+    query = adapt_query("SELECT player_name, COUNT(*) as rounds, AVG(total) as avg_score FROM scores WHERE season = ? GROUP BY player_name HAVING rounds >= 1 ORDER BY avg_score DESC LIMIT 5")
     c = conn.cursor()
 
     # Get current pot status
@@ -1288,7 +1307,8 @@ def record_hole_in_one():
     if not player_name or not course or not hole_number or not event_date:
         return redirect(url_for("hole_in_one"))
 
-    conn = sqlite3.connect("golf_scores.db")
+    conn = get_db()
+    query = adapt_query("SELECT player_name, COUNT(*) as rounds, AVG(total) as avg_score FROM scores WHERE season = ? GROUP BY player_name HAVING rounds >= 1 ORDER BY avg_score DESC LIMIT 5")
     c = conn.cursor()
 
     try:
@@ -1337,7 +1357,8 @@ def upload_hole_in_one_balances():
     if not balances_data:
         return redirect(url_for("hole_in_one"))
 
-    conn = sqlite3.connect("golf_scores.db")
+    conn = get_db()
+    query = adapt_query("SELECT player_name, COUNT(*) as rounds, AVG(total) as avg_score FROM scores WHERE season = ? GROUP BY player_name HAVING rounds >= 1 ORDER BY avg_score DESC LIMIT 5")
     c = conn.cursor()
 
     updated_count = 0
@@ -1395,7 +1416,8 @@ def toggle_paid_status(player_name):
     if password != ADMIN_PASSWORD:
         return redirect(url_for("hole_in_one"))
 
-    conn = sqlite3.connect("golf_scores.db")
+    conn = get_db()
+    query = adapt_query("SELECT player_name, COUNT(*) as rounds, AVG(total) as avg_score FROM scores WHERE season = ? GROUP BY player_name HAVING rounds >= 1 ORDER BY avg_score DESC LIMIT 5")
     c = conn.cursor()
 
     try:
@@ -1460,7 +1482,8 @@ def record_hole_in_one_payment():
     except ValueError:
         return redirect(url_for("hole_in_one"))
 
-    conn = sqlite3.connect("golf_scores.db")
+    conn = get_db()
+    query = adapt_query("SELECT player_name, COUNT(*) as rounds, AVG(total) as avg_score FROM scores WHERE season = ? GROUP BY player_name HAVING rounds >= 1 ORDER BY avg_score DESC LIMIT 5")
     c = conn.cursor()
 
     try:
@@ -1502,7 +1525,8 @@ def record_hole_in_one_payment():
 def update_hole_in_one_pot(player_name):
     """Update pot when a player plays a round (called from score entry)"""
 
-    conn = sqlite3.connect("golf_scores.db")
+    conn = get_db()
+    query = adapt_query("SELECT player_name, COUNT(*) as rounds, AVG(total) as avg_score FROM scores WHERE season = ? GROUP BY player_name HAVING rounds >= 1 ORDER BY avg_score DESC LIMIT 5")
     c = conn.cursor()
 
     try:
