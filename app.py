@@ -172,7 +172,8 @@ def home():
                          recent_matches=recent_matches,
                          hole_in_one_pot=hole_in_one_pot,
                          total_rounds_played=total_rounds_played,
-                         unique_players=unique_players)
+                         unique_players=unique_players,
+                         format_time_12hr=format_time_12hr)
 
 @app.route("/api/live-match-status")
 @require_auth
