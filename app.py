@@ -113,12 +113,14 @@ def home():
     ''', (current_season,))
     leaderboard_widget = c.fetchall()
 
-    # Get upcoming events (next 3)
+    # Get upcoming events (next 3) with player names
     c.execute("""
         SELECT e.event_date, e.event_time, e.course, e.description,
-               COUNT(ep.player_id) as participant_count
+               COUNT(ep.player_id) as participant_count,
+               COALESCE(GROUP_CONCAT(p.name, ', '), '') as player_names
         FROM events e
         LEFT JOIN event_participants ep ON e.id = ep.event_id
+        LEFT JOIN players p ON ep.player_id = p.id
         WHERE e.event_date >= date('now')
         GROUP BY e.id
         ORDER BY e.event_date, e.event_time
