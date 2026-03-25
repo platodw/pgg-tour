@@ -459,10 +459,11 @@ def leaderboard():
 
     try:
         c.execute('''
-            SELECT player_name, COUNT(*) as rounds, AVG(total) as avg_score
-            FROM scores
-            WHERE season = ?
-            GROUP BY player_name
+            SELECT s.player_name, COUNT(*) as rounds, AVG(s.total) as avg_score
+            FROM scores s
+            JOIN players p ON s.player_name = p.name AND p.active = 1
+            WHERE s.season = ?
+            GROUP BY s.player_name
             HAVING rounds >= 1
             ORDER BY avg_score DESC
         ''', (current_season,))
