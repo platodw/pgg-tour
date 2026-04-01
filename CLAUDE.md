@@ -2,6 +2,10 @@
 
 PGG Tour: Flask web app and data backend for the PGG Tour garage golf simulator league. Tracks scores, leaderboards, player rosters, event schedules, awards, and a hole-in-one pot.
 
+## Context
+
+This is the original PGG Tour app, deployed on Heroku. The league's primary frontend has moved to the pggtour-loveable-importer repo (React/Supabase/Vercel), but this Flask app still runs and serves the pgg-api data that the MCP server consumes. Dan is the sole developer. Changes here are infrequent now, mostly data fixes or API adjustments to support the newer frontend.
+
 ## Tech Stack
 
 - Python 3.11, Flask 2.3, Jinja2 templates
